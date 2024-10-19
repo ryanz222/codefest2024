@@ -1,29 +1,19 @@
 // app/layout.tsx
-import "@/styles/globals.css";
-import clsx from "clsx";
+'use client';
 
-import { Providers } from "./providers";
+import '@/styles/globals.css';
+import clsx from 'clsx';
 
-import { fontSans } from "@/config/fonts";
-import { Navbar } from "@/components/navbar";
-export default function RootLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+import { Providers } from './providers';
+
+import { fontSans } from '@/config/fonts';
+import { Navbar } from '@/components/navbar';
+export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html suppressHydrationWarning lang="en">
             <head />
-            <body
-                suppressHydrationWarning
-                className={clsx(
-                    "min-h-screen bg-background font-sans antialiased",
-                    fontSans.variable,
-                )}
-            >
-                <Providers
-                    themeProps={{ attribute: "class", defaultTheme: "light" }}
-                >
+            <body suppressHydrationWarning className={clsx('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
+                <Providers themeProps={{ attribute: 'class', defaultTheme: 'light' }}>
                     <Navbar />
                     <main>{children}</main>
                 </Providers>

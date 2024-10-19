@@ -2,9 +2,9 @@
 'use client';
 import { useState } from 'react';
 
-import MapComponent from './components/map';
-import TripTimeline from './components/timeline';
-import TripChatbot from './components/chatbot';
+import MapComponent from '@/app/itinerary/components/map';
+import TripTimeline from '@/app/itinerary/components/timeline';
+import TripChatbot from '@/app/itinerary/components/chatbot';
 
 export interface Event {
     id: number;

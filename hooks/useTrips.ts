@@ -14,10 +14,8 @@ interface Hotel {
     address: string;
     latitude: number;
     longitude: number;
-    relative_check_in_day: number;
-    relative_check_out_day: number;
-    exact_check_in_date: Date;
-    exact_check_out_date: Date;
+    check_in_day: number;
+    check_out_day: number;
     adults: number;
     room_quantity: number;
     board_type: 'ROOM_ONLY' | 'BREAKFAST' | 'HALF_BOARD' | 'FULL_BOARD' | 'ALL_INCLUSIVE';
@@ -37,6 +35,7 @@ interface Flight {
 interface Trip {
     id: number;
     name: string;
+    length_in_days: number;
     description: string;
     user_id: string;
     created_at: string;
