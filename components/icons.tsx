@@ -1,4 +1,5 @@
 import * as React from "react";
+import { SVGProps } from "react";
 
 import { IconSvgProps } from "@/types";
 
@@ -116,5 +117,117 @@ export const SearchIcon = (props: IconSvgProps) => (
             strokeLinejoin="round"
             strokeWidth="2"
         />
+    </svg>
+);
+
+export const UpArrow = (props: SVGProps<SVGSVGElement>) => (
+    <svg
+        className="feather feather-arrow-up"
+        fill="none"
+        height={24}
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        width={24}
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+);
+
+export const DownArrow = (props: SVGProps<SVGSVGElement>) => (
+    <svg
+        className="feather feather-arrow-down"
+        fill="none"
+        height={24}
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        width={24}
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path d="M12 5v14M19 12l-7 7-7-7" />
+    </svg>
+);
+
+export const PlaneIcon = (props: SVGProps<SVGSVGElement>) => (
+    <svg
+        fill="#5f6368"
+        height={24}
+        viewBox="0 -960 960 960"
+        width={24}
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path d="m397-115-99-184-184-99 71-70 145 25 102-102-317-135 84-86 385 68 124-124q23-23 57-23t57 23q23 23 23 56.5T822-709L697-584l68 384-85 85-136-317-102 102 26 144-71 71Z" />
+    </svg>
+);
+
+export const DarkModePlaneIcon = (props: SVGProps<SVGSVGElement>) => (
+    <svg
+        fill="#F3F3F3"
+        height={24}
+        viewBox="0 -960 960 960"
+        width={24}
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path d="m397-115-99-184-184-99 71-70 145 25 102-102-317-135 84-86 385 68 124-124q23-23 57-23t57 23q23 23 23 56.5T822-709L697-584l68 384-85 85-136-317-102 102 26 144-71 71Z" />
+    </svg>
+);
+
+export const HotelIcon = (props: SVGProps<SVGSVGElement>) => (
+    <svg
+        fill="#5f6368"
+        height={24}
+        viewBox="0 -960 960 960"
+        width={24}
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path d="M40-200v-600h80v400h320v-320h320q66 0 113 47t47 113v360h-80v-120H120v120H40Zm240-240q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35Zm240 40h320v-160q0-33-23.5-56.5T760-640H520v240ZM280-520q17 0 28.5-11.5T320-560q0-17-11.5-28.5T280-600q-17 0-28.5 11.5T240-560q0 17 11.5 28.5T280-520Zm0-40Zm240-80v240-240Z" />
+    </svg>
+);
+
+export const DarkModeHotelIcon = (props: SVGProps<SVGSVGElement>) => (
+    <svg
+        fill="#F3F3F3"
+        height={24}
+        viewBox="0 -960 960 960"
+        width={24}
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path d="M40-200v-600h80v400h320v-320h320q66 0 113 47t47 113v360h-80v-120H120v120H40Zm240-240q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35Zm240 40h320v-160q0-33-23.5-56.5T760-640H520v240ZM280-520q17 0 28.5-11.5T320-560q0-17-11.5-28.5T280-600q-17 0-28.5 11.5T240-560q0 17 11.5 28.5T280-520Zm0-40Zm240-80v240-240Z" />
+    </svg>
+);
+
+export const ActivityIcon = (props: SVGProps<SVGSVGElement>) => (
+    <svg
+        fill="#5f6368"
+        height={24}
+        viewBox="0 -960 960 960"
+        width={24}
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path d="M200-160v-80h80v-160L40-760h560L360-400v160h80v80H200Zm36-440h168l56-80H180l56 80Zm404 440q-50 0-85-35t-35-85q0-50 35-85t85-35q11 0 21 1.5t19 6.5v-368h200v120H760v360q0 50-35 85t-85 35Z" />
+    </svg>
+);
+
+export const DarkModeActivityIcon = (props: SVGProps<SVGSVGElement>) => (
+    <svg
+        fill="#F3F3F3"
+        height={24}
+        viewBox="0 -960 960 960"
+        width={24}
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path d="M200-160v-80h80v-160L40-760h560L360-400v160h80v80H200Zm36-440h168l56-80H180l56 80Zm404 440q-50 0-85-35t-35-85q0-50 35-85t85-35q11 0 21 1.5t19 6.5v-368h200v120H760v360q0 50-35 85t-85 35Z" />
     </svg>
 );
