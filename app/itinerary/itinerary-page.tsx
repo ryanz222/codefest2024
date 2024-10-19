@@ -268,6 +268,7 @@ export default function ItineraryPage() {
 
         return (
             <div style={{ ...style, height: "auto" }}>
+
                 <div
                     ref={(el) => {
                         if (
@@ -281,10 +282,7 @@ export default function ItineraryPage() {
                             );
                         }
                     }}
-                    className={`p-2 relative min-h-[90px] ${theme === "dark"
-                        ? "bg-opacity-95 text-white"
-                        : "bg-opacity-95 text-black"
-                        }`}
+                    className={`p-2 relative min-h-[90px]`}
                 >
                     <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center">
@@ -388,6 +386,7 @@ export default function ItineraryPage() {
                 body: JSON.stringify({ message: userInput }),
             });
             const data = await response.json();
+
             setAiResponse(data.response);
         } catch (error) {
             console.error('Error:', error);
@@ -397,24 +396,33 @@ export default function ItineraryPage() {
     };
 
     return (
+        // Main container
         <div
-            className={`relative w-full h-[calc(100vh-64px)] ${theme === "dark" ? "bg-gray-900" : "bg-white"}`}
+            className={`relative w-full h-[calc(100vh-64px)]`}
         >
+            {/* Map container */}
             <div
                 ref={mapContainerRef}
                 className="absolute top-0 left-0 w-full h-full"
             />
+
+            {/* Itinerary container */}
             <div
-                className={`absolute top-4 left-4 h-[calc(100%-2rem)] w-1/3 ${theme === "dark"
-                    ? "bg-gray-800 bg-opacity-95"
-                    : "bg-white bg-opacity-95"
-                    } p-4 overflow-hidden rounded-lg shadow-lg flex flex-col`}
+                className={`absolute top-4 left-4 h-[calc(100%-2rem)] w-1/3 p-4 overflow-hidden rounded-xl shadow-lg flex flex-col
+                    ${theme === 'dark'
+                        ? 'bg-gray-800/90 backdrop-blur-md'
+                        : 'bg-white/90 backdrop-blur-md'}
+                `}
             >
+
+                {/* Itinerary title */}
                 <h1
-                    className={`text-2xl font-bold text-center mb-4 ${theme === "dark" ? "text-white" : "text-black"}`}
+                    className={`text-2xl font-bold text-center mb-4`}
                 >
                     Your Itinerary
                 </h1>
+
+                {/* Itinerary list of events */}
                 <div className="flex-grow overflow-hidden relative">
                     <ScrollShadow className="h-full">
                         <AutoSizer>
@@ -439,15 +447,15 @@ export default function ItineraryPage() {
                 <Card className="mt-4 p-4 absolute bottom-4 left-0 right-0 mx-4">
                     <div className="flex flex-col">
                         <Textarea
+                            className="mb-2"
                             placeholder="Ask for itinerary modifications..."
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
-                            className="mb-2"
                         />
                         <Button
                             color="primary"
-                            onClick={handleSubmit}
                             isLoading={isLoading}
+                            onClick={handleSubmit}
                         >
                             Get AI Modifications
                         </Button>
@@ -537,6 +545,6 @@ export default function ItineraryPage() {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
-        </div>
+        </div >
     );
 }
