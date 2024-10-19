@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -15,6 +16,7 @@ import {
 } from "@nextui-org/react";
 import { VariableSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
+import { useTheme } from "next-themes";
 
 import styles from "./itinerary-page.module.css";
 
@@ -24,6 +26,9 @@ import {
     PlaneIcon,
     HotelIcon,
     ActivityIcon,
+    DarkModePlaneIcon,
+    DarkModeHotelIcon,
+    DarkModeActivityIcon,
 } from "@/components/icons";
 
 interface Event {
@@ -39,19 +44,35 @@ interface Event {
 }
 
 const eventTypeColors = {
-    Hotel: "bg-red-200",
-    Flight: "bg-green-200",
-    Activity: "bg-blue-200",
+    Hotel: { light: "bg-red-200", dark: "bg-red-800" },
+    Flight: { light: "bg-green-200", dark: "bg-green-800" },
+    Activity: { light: "bg-blue-200", dark: "bg-blue-800" },
 };
 
 const DAY_HEIGHT = 120; // Adjust this value based on your design
 const DAYS_TO_LOAD = 3650; // 10 years worth of days
 
 const holidays = [
-    { date: "2024-01-01", name: "New Year's Day", color: "bg-red-200" },
-    { date: "2024-07-04", name: "Independence Day", color: "bg-blue-200" },
-    { date: "2024-10-31", name: "Halloween", color: "bg-purple-200" },
-    { date: "2024-12-25", name: "Christmas Day", color: "bg-green-200" },
+    {
+        date: "2024-01-01",
+        name: "New Year's Day",
+        color: { light: "bg-red-200", dark: "bg-red-800" },
+    },
+    {
+        date: "2024-07-04",
+        name: "Independence Day",
+        color: { light: "bg-blue-200", dark: "bg-blue-800" },
+    },
+    {
+        date: "2024-10-31",
+        name: "Halloween",
+        color: { light: "bg-purple-200", dark: "bg-purple-800" },
+    },
+    {
+        date: "2024-12-25",
+        name: "Christmas Day",
+        color: { light: "bg-green-200", dark: "bg-green-800" },
+    },
 ];
 
 export default function ItineraryPage() {
@@ -64,6 +85,7 @@ export default function ItineraryPage() {
     const [newEventType, setNewEventType] = useState<Event["type"]>("Activity");
     const [newEventTitle, setNewEventTitle] = useState("");
     const [newEventLocation, setNewEventLocation] = useState("");
+    const { theme } = useTheme();
 
     const listRef = useRef<List>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -72,6 +94,7 @@ export default function ItineraryPage() {
 
     const allDays = useMemo(() => {
         const today = new Date();
+
         today.setHours(0, 0, 0, 0);
         const startDate = new Date(today);
 
@@ -79,7 +102,9 @@ export default function ItineraryPage() {
 
         return Array.from({ length: DAYS_TO_LOAD }, (_, i) => {
             const date = new Date(startDate);
+
             date.setDate(date.getDate() + i);
+
             return date;
         });
     }, []);
@@ -109,10 +134,12 @@ export default function ItineraryPage() {
 
         // Scroll to today's date on initial render
         const today = new Date();
+
         today.setHours(0, 0, 0, 0);
         const todayIndex = allDays.findIndex(
-            (date) => date.toDateString() === today.toDateString()
+            (date) => date.toDateString() === today.toDateString(),
         );
+
         listRef.current?.scrollTo(todayIndex * DAY_HEIGHT);
 
         // Pre-calculate all row heights
@@ -123,6 +150,7 @@ export default function ItineraryPage() {
             const eventHeight = dayEvents.length * 70; // Adjust based on your event component height
             const holidayHeight = holidayInfo ? 30 : 0;
             const totalHeight = baseHeight + eventHeight + holidayHeight;
+
             setRowHeight(index, totalHeight);
         });
 
@@ -248,7 +276,10 @@ export default function ItineraryPage() {
                             );
                         }
                     }}
-                    className="p-2 relative min-h-[120px]"
+                    className={`p-2 relative min-h-[120px] ${theme === "dark"
+                        ? "bg-opacity-90 text-white"
+                        : "bg-opacity-80 text-black"
+                        }`}
                 >
                     <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center">
@@ -256,7 +287,10 @@ export default function ItineraryPage() {
                             <span className="ml-1">{monthDay}</span>
                             {holidayInfo && (
                                 <span
-                                    className={`ml-2 text-xs px-2 py-1 rounded-full ${holidayInfo.color}`}
+                                    className={`ml-2 text-xs px-2 py-1 rounded-full ${theme === "dark"
+                                        ? holidayInfo.color.dark
+                                        : holidayInfo.color.light
+                                        }`}
                                 >
                                     {holidayInfo.name}
                                 </span>
@@ -265,16 +299,25 @@ export default function ItineraryPage() {
                     </div>
                     {dayEvents.map((event) => {
                         const IconComponent =
-                            event.type === "Hotel"
-                                ? HotelIcon
-                                : event.type === "Flight"
-                                    ? PlaneIcon
-                                    : ActivityIcon;
+                            theme === "dark"
+                                ? event.type === "Hotel"
+                                    ? DarkModeHotelIcon
+                                    : event.type === "Flight"
+                                        ? DarkModePlaneIcon
+                                        : DarkModeActivityIcon
+                                : event.type === "Hotel"
+                                    ? HotelIcon
+                                    : event.type === "Flight"
+                                        ? PlaneIcon
+                                        : ActivityIcon;
 
                         return (
                             <div
                                 key={event.id}
-                                className={`${eventTypeColors[event.type]} shadow-sm rounded-md px-3 py-2 mb-2`}
+                                className={`${theme === "dark"
+                                    ? eventTypeColors[event.type].dark
+                                    : eventTypeColors[event.type].light
+                                    } shadow-sm rounded-md px-3 py-2 mb-2`}
                             >
                                 <div className="flex items-center">
                                     <IconComponent className="w-4 h-4 mr-2" />
@@ -282,26 +325,39 @@ export default function ItineraryPage() {
                                         {event.title}
                                     </h3>
                                 </div>
-                                <p className="text-sm text-gray-700">
+                                <p
+                                    className={`text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}
+                                >
                                     {event.description}
                                 </p>
-                                <p className="text-xs text-gray-500">
+                                <p
+                                    className={`text-xs ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}
+                                >
                                     {event.location.address}
                                 </p>
                             </div>
                         );
                     })}
                     {dayEvents.length === 0 && (
-                        <p className="text-sm text-gray-400">No events</p>
+                        <p
+                            className={`text-sm ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}
+                        >
+                            No events
+                        </p>
                     )}
                     <div className="absolute top-2 right-2 flex items-center">
-                        <span className="text-sm text-gray-500 mr-2">
+                        <span
+                            className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"} mr-2`}
+                        >
                             {year}
                         </span>
                         <Button
                             isIconOnly
                             aria-label="Add event"
-                            className="bg-white text-black shadow-sm hover:bg-gray-100 transition-colors duration-200"
+                            className={`${theme === "dark"
+                                ? "bg-gray-700 text-white hover:bg-gray-600"
+                                : "bg-white text-black hover:bg-gray-100"
+                                } shadow-sm transition-colors duration-200`}
                             size="sm"
                             onClick={() => {
                                 setSelectedDate(date);
@@ -317,13 +373,22 @@ export default function ItineraryPage() {
     };
 
     return (
-        <div className="relative w-full h-[calc(100vh-64px)]">
+        <div
+            className={`relative w-full h-[calc(100vh-64px)] ${theme === "dark" ? "bg-gray-900" : "bg-white"}`}
+        >
             <div
                 ref={mapContainerRef}
                 className="absolute top-0 left-0 w-full h-full"
             />
-            <div className="absolute top-4 left-4 h-[calc(100%-2rem)] w-1/3 bg-white bg-opacity-80 p-4 overflow-hidden rounded-lg shadow-lg">
-                <h1 className="text-2xl font-bold text-center mb-4">
+            <div
+                className={`absolute top-4 left-4 h-[calc(100%-2rem)] w-1/3 ${theme === "dark"
+                    ? "bg-gray-800 bg-opacity-90"
+                    : "bg-white bg-opacity-80"
+                    } p-4 overflow-hidden rounded-lg shadow-lg`}
+            >
+                <h1
+                    className={`text-2xl font-bold text-center mb-4 ${theme === "dark" ? "text-white" : "text-black"}`}
+                >
                     Your Itinerary
                 </h1>
                 <div className="h-[calc(100%-3rem)]">
@@ -347,7 +412,10 @@ export default function ItineraryPage() {
                     <Button
                         isIconOnly
                         aria-label="Return to present day"
-                        className="absolute bottom-4 right-4 bg-white text-blue-500 shadow-lg hover:bg-gray-100 transition-colors duration-200"
+                        className={`absolute bottom-4 right-4 ${theme === "dark"
+                            ? "bg-gray-700 text-blue-300 hover:bg-gray-600"
+                            : "bg-white text-blue-500 hover:bg-gray-100"
+                            } shadow-lg transition-colors duration-200`}
                         radius="full"
                         size="lg"
                         onClick={returnToPresent}
