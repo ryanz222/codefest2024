@@ -6,6 +6,7 @@ import {
 } from "@nextui-org/navbar";
 import { Link } from "@nextui-org/link";
 import NextLink from "next/link";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
@@ -36,6 +37,12 @@ export const Navbar = () => {
                         <GithubIcon className="text-default-500" />
                     </Link>
                     <ThemeSwitch />
+                    <SignedOut>
+                        <SignInButton />
+                    </SignedOut>
+                    <SignedIn>
+                        <UserButton />
+                    </SignedIn>
                 </NavbarItem>
             </NavbarContent>
         </NextUINavbar>
