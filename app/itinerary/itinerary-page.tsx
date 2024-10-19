@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Card, Button } from "@nextui-org/react";
 
 export default function ItineraryPage() {
@@ -12,7 +12,9 @@ export default function ItineraryPage() {
 
     return (
         <div className="flex flex-col gap-4 p-4 max-w-md mx-auto">
-            <h1 className="text-2xl font-bold text-center mb-4">Plan Your Itinerary</h1>
+            <h1 className="text-2xl font-bold text-center mb-4">
+                Plan Your Itinerary
+            </h1>
 
             {items.map((item) => (
                 <Card key={item} className="p-4">
@@ -22,14 +24,13 @@ export default function ItineraryPage() {
             ))}
 
             <Button
-                onPress={addItem}
                 className="h-40 text-4xl"
                 size="lg"
                 variant="bordered"
+                onPress={addItem}
             >
                 +
             </Button>
         </div>
     );
-};
-
+}
