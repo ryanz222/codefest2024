@@ -13,6 +13,8 @@ import {
     ModalFooter,
     Input,
     Textarea,
+    Card,
+    ScrollShadow,
 } from "@nextui-org/react";
 import { VariableSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -49,7 +51,7 @@ const eventTypeColors = {
     Activity: { light: "bg-blue-200", dark: "bg-blue-800" },
 };
 
-const DAY_HEIGHT = 120; // Adjust this value based on your design
+const DAY_HEIGHT = 90; // Adjust this value based on your design
 const DAYS_TO_LOAD = 3650; // 10 years worth of days
 
 const holidays = [
@@ -86,6 +88,9 @@ export default function ItineraryPage() {
     const [newEventTitle, setNewEventTitle] = useState("");
     const [newEventLocation, setNewEventLocation] = useState("");
     const { theme } = useTheme();
+    const [userInput, setUserInput] = useState("");
+    const [aiResponse, setAiResponse] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     const listRef = useRef<List>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -146,7 +151,7 @@ export default function ItineraryPage() {
         allDays.forEach((date, index) => {
             const dayEvents = getEventsForDay(date);
             const holidayInfo = getHolidayInfo(date);
-            const baseHeight = 120; // Minimum height
+            const baseHeight = 90; // Minimum height
             const eventHeight = dayEvents.length * 70; // Adjust based on your event component height
             const holidayHeight = holidayInfo ? 30 : 0;
             const totalHeight = baseHeight + eventHeight + holidayHeight;
@@ -246,7 +251,7 @@ export default function ItineraryPage() {
     };
 
     const getRowHeight = (index: number) => {
-        return rowHeights.current[index] || 120; // Default to 120px if not set
+        return rowHeights.current[index] || 90; // Default to 90px if not set
     };
 
     const renderDay = ({
@@ -276,9 +281,9 @@ export default function ItineraryPage() {
                             );
                         }
                     }}
-                    className={`p-2 relative min-h-[120px] ${theme === "dark"
-                        ? "bg-opacity-90 text-white"
-                        : "bg-opacity-80 text-black"
+                    className={`p-2 relative min-h-[90px] ${theme === "dark"
+                        ? "bg-opacity-95 text-white"
+                        : "bg-opacity-95 text-black"
                         }`}
                 >
                     <div className="flex justify-between items-center mb-2">
@@ -372,6 +377,25 @@ export default function ItineraryPage() {
         );
     };
 
+    const handleSubmit = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: userInput }),
+            });
+            const data = await response.json();
+            setAiResponse(data.response);
+        } catch (error) {
+            console.error('Error:', error);
+            setAiResponse("Sorry, there was an error processing your request.");
+        }
+        setIsLoading(false);
+    };
+
     return (
         <div
             className={`relative w-full h-[calc(100vh-64px)] ${theme === "dark" ? "bg-gray-900" : "bg-white"}`}
@@ -382,37 +406,69 @@ export default function ItineraryPage() {
             />
             <div
                 className={`absolute top-4 left-4 h-[calc(100%-2rem)] w-1/3 ${theme === "dark"
-                    ? "bg-gray-800 bg-opacity-90"
-                    : "bg-white bg-opacity-80"
-                    } p-4 overflow-hidden rounded-lg shadow-lg`}
+                    ? "bg-gray-800 bg-opacity-95"
+                    : "bg-white bg-opacity-95"
+                    } p-4 overflow-hidden rounded-lg shadow-lg flex flex-col`}
             >
                 <h1
                     className={`text-2xl font-bold text-center mb-4 ${theme === "dark" ? "text-white" : "text-black"}`}
                 >
                     Your Itinerary
                 </h1>
-                <div className="h-[calc(100%-3rem)]">
-                    <AutoSizer>
-                        {({ height, width }) => (
-                            <List
-                                ref={listRef}
-                                className={styles.hideScrollbar}
-                                height={height}
-                                itemCount={DAYS_TO_LOAD}
-                                itemSize={getRowHeight}
-                                width={width}
-                                onScroll={handleScroll}
-                            >
-                                {renderDay}
-                            </List>
-                        )}
-                    </AutoSizer>
+                <div className="flex-grow overflow-hidden relative">
+                    <ScrollShadow className="h-full">
+                        <AutoSizer>
+                            {({ height, width }) => (
+                                <List
+                                    ref={listRef}
+                                    className={styles.hideScrollbar}
+                                    height={height}
+                                    itemCount={DAYS_TO_LOAD}
+                                    itemSize={getRowHeight}
+                                    width={width}
+                                    onScroll={handleScroll}
+                                >
+                                    {renderDay}
+                                </List>
+                            )}
+                        </AutoSizer>
+                    </ScrollShadow>
                 </div>
+
+                {/* AI Suggestion Card */}
+                <Card className="mt-4 p-4 absolute bottom-4 left-0 right-0 mx-4">
+                    <div className="flex flex-col">
+                        <Textarea
+                            placeholder="Ask for itinerary modifications..."
+                            value={userInput}
+                            onChange={(e) => setUserInput(e.target.value)}
+                            className="mb-2"
+                        />
+                        <Button
+                            color="primary"
+                            onClick={handleSubmit}
+                            isLoading={isLoading}
+                        >
+                            Get AI Modifications
+                        </Button>
+                        {aiResponse && (
+                            <div
+                                className={`mt-2 p-2 rounded ${theme === "dark"
+                                    ? "bg-gray-700 text-white"
+                                    : "bg-gray-100 text-black"
+                                    }`}
+                            >
+                                <p>{aiResponse}</p>
+                            </div>
+                        )}
+                    </div>
+                </Card>
+
                 {showReturnToPresent && (
                     <Button
                         isIconOnly
                         aria-label="Return to present day"
-                        className={`absolute bottom-4 right-4 ${theme === "dark"
+                        className={`absolute bottom-48 right-8 ${theme === "dark"
                             ? "bg-gray-700 text-blue-300 hover:bg-gray-600"
                             : "bg-white text-blue-500 hover:bg-gray-100"
                             } shadow-lg transition-colors duration-200`}
