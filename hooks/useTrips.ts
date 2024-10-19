@@ -1,14 +1,48 @@
 // hooks/useTrips.ts
-"use client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { useSession } from "@clerk/nextjs";
-import { useState, useEffect } from "react";
+'use client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { useSession } from '@clerk/nextjs';
+import { useState, useEffect } from 'react';
+
+interface Hotel {
+    id: string; // 8 character string
+    trip_id: string; // 8 character string
+    city_code: string;
+    name: string;
+    photo_url: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    relative_check_in_day: number;
+    relative_check_out_day: number;
+    exact_check_in_date: Date;
+    exact_check_out_date: Date;
+    adults: number;
+    room_quantity: number;
+    board_type: 'ROOM_ONLY' | 'BREAKFAST' | 'HALF_BOARD' | 'FULL_BOARD' | 'ALL_INCLUSIVE';
+}
+
+interface Activity {
+    id: string; // 8 character string
+    name: string;
+    photo_url: string;
+    address: string;
+}
+
+interface Flight {
+    id: string; // 8 character string
+}
 
 interface Trip {
     id: number;
     name: string;
+    description: string;
     user_id: string;
+    created_at: string;
+    hotels: Hotel[];
+    activities: Activity[];
+    flights: Flight[];
 }
 
 interface TripFilters {
@@ -53,15 +87,12 @@ const createOrGetSupabaseClient = (supabaseAccessToken: string | null) => {
 // ----------------------------------------
 
 // Function to fetch trips from Supabase
-const fetchTrips = async (
-    client: SupabaseClient,
-    filters?: TripFilters,
-): Promise<Trip[]> => {
-    let query = client.from("trips").select("*");
+const fetchTrips = async (client: SupabaseClient, filters?: TripFilters): Promise<Trip[]> => {
+    let query = client.from('trips').select('*');
 
     // Apply filters if provided
     if (filters?.creator) {
-        query = query.eq("user_id", filters.creator);
+        query = query.eq('user_id', filters.creator);
     }
 
     const { data, error } = await query;
@@ -73,11 +104,7 @@ const fetchTrips = async (
 
 // Function to add a trip to Supabase
 const addTrip = async (client: SupabaseClient, name: string): Promise<Trip> => {
-    const { data, error } = await client
-        .from("trips")
-        .insert({ name })
-        .select()
-        .single();
+    const { data, error } = await client.from('trips').insert({ name }).select().single();
 
     if (error) throw error;
 
@@ -85,11 +112,8 @@ const addTrip = async (client: SupabaseClient, name: string): Promise<Trip> => {
 };
 
 // Function to delete a trip from Supabase
-const deleteTrip = async (
-    client: SupabaseClient,
-    id: number,
-): Promise<void> => {
-    const { error } = await client.from("trips").delete().eq("id", id);
+const deleteTrip = async (client: SupabaseClient, id: number): Promise<void> => {
+    const { error } = await client.from('trips').delete().eq('id', id);
 
     if (error) throw error;
 };
@@ -115,7 +139,7 @@ export function useTrips(filters?: TripFilters) {
             let token: string | null = null;
 
             if (session) {
-                token = await session.getToken({ template: "supabase" });
+                token = await session.getToken({ template: 'supabase' });
             }
 
             const supabaseClient = createOrGetSupabaseClient(token);
@@ -133,9 +157,9 @@ export function useTrips(filters?: TripFilters) {
     }, [isClerkLoaded, session]);
 
     const tripsQuery = useQuery<Trip[], Error>({
-        queryKey: ["trips", filters],
+        queryKey: ['trips', filters],
         queryFn: () => {
-            if (!client) throw new Error("Supabase client not initialized");
+            if (!client) throw new Error('Supabase client not initialized');
 
             return fetchTrips(client, filters);
         },
@@ -144,23 +168,23 @@ export function useTrips(filters?: TripFilters) {
 
     const addTripMutation = useMutation({
         mutationFn: (name: string) => {
-            if (!client) throw new Error("Supabase client not initialized");
+            if (!client) throw new Error('Supabase client not initialized');
 
             return addTrip(client, name);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["trips"] });
+            queryClient.invalidateQueries({ queryKey: ['trips'] });
         },
     });
 
     const deleteTripMutation = useMutation({
         mutationFn: (id: number) => {
-            if (!client) throw new Error("Supabase client not initialized");
+            if (!client) throw new Error('Supabase client not initialized');
 
             return deleteTrip(client, id);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["trips"] });
+            queryClient.invalidateQueries({ queryKey: ['trips'] });
         },
     });
 
