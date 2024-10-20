@@ -1,7 +1,20 @@
 // app/trips/page.tsx
 'use client';
 import { useState } from 'react';
-import { Card, CardFooter, Image, Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input } from '@nextui-org/react';
+import {
+    Card,
+    CardFooter,
+    Image,
+    Button,
+    Modal,
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    useDisclosure,
+    Input,
+    Chip,
+} from '@nextui-org/react';
 import Link from 'next/link';
 
 import { TripDescription, useTrips } from '@/hooks/useTrips';
@@ -13,7 +26,17 @@ export default function Trips() {
         is_published: false,
     });
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
-    const { trips, isLoading, isError, error, addTrip } = useTrips();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [creatorFilter, setCreatorFilter] = useState('');
+    const [minLength, setMinLength] = useState<number>(0);
+    const [maxLength, setMaxLength] = useState<number>(1000);
+    const { trips, isLoading, isError, error, addTrip } = useTrips({
+        search_term: searchTerm,
+        creator: creatorFilter,
+        min_length: minLength,
+        max_length: maxLength,
+    });
+    const [searchInput, setSearchInput] = useState('');
 
     const handleCreateTrip = () => {
         if (newTrip.trip_name.trim()) {
@@ -23,12 +46,58 @@ export default function Trips() {
         }
     };
 
+    const handleSearch = (value: string) => {
+        setSearchInput(value);
+    };
+
+    const handleSearchKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            setSearchTerm(searchInput);
+        }
+    };
+
+    const toggleCreatorFilter = () => {
+        setCreatorFilter(prev => (prev ? '' : 'CURRENT_USER'));
+    };
+
+    const setLengthFilter = (min: number, max: number) => {
+        if (minLength === min && maxLength === max) {
+            setMinLength(0);
+            setMaxLength(1000);
+        } else {
+            setMinLength(min);
+            setMaxLength(max);
+        }
+    };
+
     if (isLoading) return <p>Loading...</p>;
     if (isError && error) return <p>Error: {error.message}</p>;
 
     return (
         <div className="grid grid-cols-12 gap-4 p-4 h-full">
-            <Button className="col-span-12 mb-4" onPress={onOpen}>
+            <div className="col-span-12 flex flex-wrap gap-4 mb-4">
+                <Input
+                    className="w-full sm:w-64"
+                    placeholder="Search trips..."
+                    value={searchInput}
+                    onKeyDown={handleSearchKeyPress}
+                    onValueChange={handleSearch}
+                />
+                <Chip color="primary" variant={creatorFilter ? 'solid' : 'bordered'} onClick={toggleCreatorFilter}>
+                    Created by me
+                </Chip>
+                <Chip color="primary" variant={minLength === 1 && maxLength === 3 ? 'solid' : 'bordered'} onClick={() => setLengthFilter(1, 3)}>
+                    1-3 days
+                </Chip>
+                <Chip color="primary" variant={minLength === 4 && maxLength === 7 ? 'solid' : 'bordered'} onClick={() => setLengthFilter(4, 7)}>
+                    4-7 days
+                </Chip>
+                <Chip color="primary" variant={minLength === 8 ? 'solid' : 'bordered'} onClick={() => setLengthFilter(8, 1000)}>
+                    8+ days
+                </Chip>
+            </div>
+
+            <Button className="col-span-12 sm:col-span-6 md:col-span-4 h-[300px] mb-4" onPress={onOpen}>
                 Create New Trip
             </Button>
 
