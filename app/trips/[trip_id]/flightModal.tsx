@@ -52,37 +52,6 @@ const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, trip_id, tri
         }
     }, [trip, flight_entry_id]);
 
-    const handleCityChange = async (value: string, type: 'departure' | 'destination') => {
-        if (!flightData) return;
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const response = await fetch(`/api/cityNameTocityCode?cityName=${encodeURIComponent(value)}`);
-            const data = await response.json();
-
-            if (data.airportCode) {
-                const updatedFlight = {
-                    ...flightData,
-                    [type === 'departure' ? 'departure_city_code' : 'destination_city_code']: data.airportCode,
-                };
-
-                await updateFlight(updatedFlight);
-                setFlightData(updatedFlight);
-                toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} city updated successfully`);
-            } else {
-                throw new Error('City code not found');
-            }
-        } catch (error) {
-            console.error('Error updating city:', error);
-            setError(`Failed to update ${type} city. Please try again.`);
-            toast.error(`Failed to update ${type} city`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     const handleUpdateFlight = async () => {
         if (!flightData) return;
 
