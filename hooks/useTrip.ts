@@ -78,7 +78,6 @@ export interface Activity {
     photo_url?: string;
     address?: string;
     description?: string;
-
 }
 
 export interface Flight {
@@ -91,6 +90,7 @@ export interface Flight {
     destination_city_code: string;
     departure_city_code: string;
     relative_departure_day: number;
+    relative_return_day: number;
     adults: number;
     travel_class: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
     non_stop: boolean;
@@ -173,9 +173,9 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
     if (!trip_id) throw new Error('Trip ID is required for updating');
 
     // Update trip data
-    const { data, error } = await client.from('trips').update(tripData).eq('trip_id', trip_id).select().single();
+    const { data: tripDataResult, error: tripError } = await client.from('trips').update(tripData).eq('trip_id', trip_id).select().single();
 
-    if (error) throw error;
+    if (tripError) throw tripError;
 
     // Handle hotels
     if (hotels && hotels.length > 0) {
@@ -186,7 +186,7 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
                 relative_check_in_day: h.relative_check_in_day,
                 relative_check_out_day: h.relative_check_out_day,
                 adults: h.adults,
-                hotel_api_id: h.hotel_id, // Renamed to match schema
+                hotel_api_id: h.hotel_id, // Ensure hotel_id is mapped correctly
                 address: h.address,
                 photo_url: h.photo_url,
                 search_latitude: h.search_latitude,
@@ -197,21 +197,55 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
                 allowed_ratings: h.allowed_ratings,
                 required_amenities: h.required_amenities,
                 priority: h.priority,
-                ideal_hotel_name: h.ideal_hotel_name
+                ideal_hotel_name: h.ideal_hotel_name,
             })),
             { onConflict: 'trip_id,hotel_api_id' }
         );
+
         if (hotelError) throw hotelError;
     }
 
-    // Handle flights (if needed)
+    // Handle flights
     if (flights && flights.length > 0) {
-        // Implement flight upsert logic here
+        const { error: flightError } = await client.from('flights').upsert(
+            flights.map(f => ({
+                trip_id: f.trip_id,
+                creator_id: f.creator_id,
+                flight_api_id: f.id,
+                destination_city_code: f.destination_city_code,
+                departure_city_code: f.departure_city_code,
+                relative_departure_day: f.relative_departure_day,
+                relative_return_day: f.relative_return_day,
+                adults: f.adults,
+                travel_class: f.travel_class,
+                non_stop: f.non_stop,
+                currency: f.currency,
+                max_price: f.max_price,
+                included_airline_codes: f.included_airline_codes,
+                excluded_airline_codes: f.excluded_airline_codes,
+            })),
+            { onConflict: 'trip_id,flight_api_id' }
+        );
+
+        if (flightError) throw flightError;
     }
 
-    // Handle activities (if needed)
+    // Handle activities
     if (activities && activities.length > 0) {
-        // Implement activity upsert logic here
+        const { error: activityError } = await client.from('activities').upsert(
+            activities.map(a => ({
+                trip_id: a.trip_id,
+                creator_id: a.creator_id,
+                activity_api_id: a.id,
+                name: a.name,
+                photo_url: a.photo_url,
+                address: a.address,
+                description: a.description,
+            })),
+            { onConflict: 'trip_id,activity_api_id' }
+        );
+
+        if (activityError) throw activityError;
     }
 
     return fetchTrip(client, trip_id);

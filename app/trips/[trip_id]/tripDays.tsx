@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@nextui-org/react';
+import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ScrollShadow } from '@nextui-org/react';
 import { useTheme } from 'next-themes';
 
 import { HotelIcon, PlaneIcon, ActivityIcon, DarkModeHotelIcon, DarkModePlaneIcon, DarkModeActivityIcon } from '@/components/icons';
@@ -95,116 +95,121 @@ const TripDays: React.FC<TripDaysProps> = ({ trip, tripStartDate, onAddEvent }) 
         }
     }
 
-    return (
-        <>
-            {allDays.map((date, index) => {
-                const { weekday, monthDay, year } = {
-                    weekday: date.toLocaleString('default', { weekday: 'short' }),
-                    monthDay: `${date.toLocaleString('default', { month: 'short' })} ${date.getDate()}`,
-                    year: date.getFullYear(),
-                };
-                const holidayInfo = getHolidayInfo(date);
-                const dayEvents = getEventsForDay(date);
+    const bgStyle = theme === 'dark' ? 'bg-gray-800/90 backdrop-blur-md' : 'bg-white/90 backdrop-blur-md';
 
-                return (
-                    <div key={date.toISOString()} className="p-2 relative min-h-[90px]">
-                        <div>
-                            {/* Day Header */}
-                            <div className="flex justify-between items-center mb-2">
-                                <div className="flex items-center">
-                                    <span className="font-semibold">{weekday}</span>
-                                    <span className="ml-1">{monthDay}</span>
-                                    {holidayInfo && (
-                                        <span
-                                            className={`ml-2 text-xs px-2 py-1 rounded-full ${theme === 'dark' ? holidayInfo.color.dark : holidayInfo.color.light
-                                                }`}
+    return (
+        <div className={`h-full w-full p-4 overflow-hidden rounded-xl shadow-lg flex flex-col ${bgStyle}`}>
+            <ScrollShadow hideScrollBar className="h-full">
+
+                {allDays.map((date, index) => {
+                    const { weekday, monthDay, year } = {
+                        weekday: date.toLocaleString('default', { weekday: 'short' }),
+                        monthDay: `${date.toLocaleString('default', { month: 'short' })} ${date.getDate()}`,
+                        year: date.getFullYear(),
+                    };
+                    const holidayInfo = getHolidayInfo(date);
+                    const dayEvents = getEventsForDay(date);
+
+                    return (
+                        <div key={date.toISOString()} className="p-2 relative min-h-[90px]">
+                            <div>
+                                {/* Day Header */}
+                                <div className="flex justify-between items-center mb-2">
+                                    <div className="flex items-center">
+                                        <span className="font-semibold">{weekday}</span>
+                                        <span className="ml-1">{monthDay}</span>
+                                        {holidayInfo && (
+                                            <span
+                                                className={`ml-2 text-xs px-2 py-1 rounded-full ${theme === 'dark' ? holidayInfo.color.dark : holidayInfo.color.light
+                                                    }`}
+                                            >
+                                                {holidayInfo.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Events */}
+                                {dayEvents.map(event => {
+                                    let IconComponent = null;
+                                    let eventType: EventType;
+                                    let title = '';
+                                    let description = '';
+                                    let address = '';
+
+                                    if ('hotel_id' in event) {
+                                        eventType = 'Hotel';
+                                        IconComponent = getIconComponent(eventType);
+                                        title = event.ideal_hotel_name || 'Unknown Hotel';
+                                        description = `Check-in: Day ${event.relative_check_in_day}, Check-out: Day ${event.relative_check_out_day}`;
+                                        address = event.address || '';
+                                    } else if ('destination_city_code' in event) {
+                                        eventType = 'Flight';
+                                        IconComponent = getIconComponent(eventType);
+                                        title = `${event.departure_city_code} to ${event.destination_city_code}`;
+                                        description = `Departure: Day ${event.relative_departure_day}`;
+                                    } else {
+                                        eventType = 'Activity';
+                                        IconComponent = getIconComponent(eventType);
+                                        title = (event as Activity).name;
+                                        description = (event as Activity).description || '';
+                                        address = (event as Activity).address || '';
+                                    }
+
+                                    return (
+                                        <div
+                                            key={`${event.creator_id}-${event.trip_id}-${title}`}
+                                            className={`${theme === 'dark' ? eventTypeColors[eventType].dark : eventTypeColors[eventType].light
+                                                } shadow-sm rounded-md px-3 py-2 mb-2`}
                                         >
-                                            {holidayInfo.name}
-                                        </span>
-                                    )}
+                                            <div className="flex items-center">
+                                                {IconComponent && <IconComponent className="w-4 h-4 mr-2" />}
+                                                <h3 className="font-semibold">{title}</h3>
+                                            </div>
+                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{description}</p>
+                                            {address && <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{address}</p>}
+                                        </div>
+                                    );
+                                })}
+                                {/* No Events */}
+                                {dayEvents.length === 0 && <p className={`text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>No events</p>}
+
+                                {/* Day Footer with Dropdown */}
+                                <div className="absolute top-2 right-2 flex items-center">
+                                    <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-2`}>{year}</span>
+                                    <Dropdown>
+                                        <DropdownTrigger>
+                                            <Button
+                                                isIconOnly
+                                                aria-label="Add event"
+                                                className={`${theme === 'dark'
+                                                    ? 'bg-gray-700 text-white hover:bg-gray-600'
+                                                    : 'bg-white text-black hover:bg-gray-100'
+                                                    } shadow-sm transition-colors duration-200`}
+                                                size="sm"
+                                            >
+                                                +
+                                            </Button>
+                                        </DropdownTrigger>
+                                        <DropdownMenu aria-label="Add event options">
+                                            <DropdownItem key="flight" onPress={() => onAddEvent('Flight', date)}>
+                                                Flight
+                                            </DropdownItem>
+                                            <DropdownItem key="hotel" onPress={() => onAddEvent('Hotel', date)}>
+                                                Hotel
+                                            </DropdownItem>
+                                            <DropdownItem key="activity" onPress={() => onAddEvent('Activity', date)}>
+                                                Activity
+                                            </DropdownItem>
+                                        </DropdownMenu>
+                                    </Dropdown>
                                 </div>
                             </div>
-
-                            {/* Events */}
-                            {dayEvents.map(event => {
-                                let IconComponent = null;
-                                let eventType: EventType;
-                                let title = '';
-                                let description = '';
-                                let address = '';
-
-                                if ('hotel_id' in event) {
-                                    eventType = 'Hotel';
-                                    IconComponent = getIconComponent(eventType);
-                                    title = event.ideal_hotel_name || 'Unknown Hotel';
-                                    description = `Check-in: Day ${event.relative_check_in_day}, Check-out: Day ${event.relative_check_out_day}`;
-                                    address = event.address || '';
-                                } else if ('destination_city_code' in event) {
-                                    eventType = 'Flight';
-                                    IconComponent = getIconComponent(eventType);
-                                    title = `${event.departure_city_code} to ${event.destination_city_code}`;
-                                    description = `Departure: Day ${event.relative_departure_day}`;
-                                } else {
-                                    eventType = 'Activity';
-                                    IconComponent = getIconComponent(eventType);
-                                    title = (event as Activity).name;
-                                    description = (event as Activity).description || '';
-                                    address = (event as Activity).address || '';
-                                }
-
-                                return (
-                                    <div
-                                        key={`${event.creator_id}-${event.trip_id}-${title}`}
-                                        className={`${theme === 'dark' ? eventTypeColors[eventType].dark : eventTypeColors[eventType].light
-                                            } shadow-sm rounded-md px-3 py-2 mb-2`}
-                                    >
-                                        <div className="flex items-center">
-                                            {IconComponent && <IconComponent className="w-4 h-4 mr-2" />}
-                                            <h3 className="font-semibold">{title}</h3>
-                                        </div>
-                                        <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{description}</p>
-                                        {address && <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{address}</p>}
-                                    </div>
-                                );
-                            })}
-                            {/* No Events */}
-                            {dayEvents.length === 0 && <p className={`text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>No events</p>}
-
-                            {/* Day Footer with Dropdown */}
-                            <div className="absolute top-2 right-2 flex items-center">
-                                <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-2`}>{year}</span>
-                                <Dropdown>
-                                    <DropdownTrigger>
-                                        <Button
-                                            isIconOnly
-                                            aria-label="Add event"
-                                            className={`${theme === 'dark'
-                                                ? 'bg-gray-700 text-white hover:bg-gray-600'
-                                                : 'bg-white text-black hover:bg-gray-100'
-                                                } shadow-sm transition-colors duration-200`}
-                                            size="sm"
-                                        >
-                                            +
-                                        </Button>
-                                    </DropdownTrigger>
-                                    <DropdownMenu aria-label="Add event options">
-                                        <DropdownItem key="flight" onPress={() => onAddEvent('Flight', date)}>
-                                            Flight
-                                        </DropdownItem>
-                                        <DropdownItem key="hotel" onPress={() => onAddEvent('Hotel', date)}>
-                                            Hotel
-                                        </DropdownItem>
-                                        <DropdownItem key="activity" onPress={() => onAddEvent('Activity', date)}>
-                                            Activity
-                                        </DropdownItem>
-                                    </DropdownMenu>
-                                </Dropdown>
-                            </div>
                         </div>
-                    </div>
-                );
-            })}
-        </>
+                    );
+                })}
+            </ScrollShadow>
+        </div>
     );
 };
 

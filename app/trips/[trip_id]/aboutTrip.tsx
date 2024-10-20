@@ -9,9 +9,10 @@ import { MoreIcon } from '@/components/icons';
 
 interface AboutTripProps {
     trip_id: string;
+    handleOpenEditTripModal: () => void;
 }
 
-export default function AboutTrip({ trip_id }: AboutTripProps) {
+export default function AboutTrip({ trip_id, handleOpenEditTripModal }: AboutTripProps) {
     const router = useRouter();
     const { trip, isLoading, isError, error, deleteTrip } = useTrip(trip_id);
 
@@ -62,6 +63,9 @@ export default function AboutTrip({ trip_id }: AboutTripProps) {
                     <DropdownMenu aria-label="Trip actions">
                         <DropdownItem key="delete" className="text-danger" color="danger" onClick={handleDeleteTrip}>
                             Delete Trip
+                        </DropdownItem>
+                        <DropdownItem key="edit" onClick={handleOpenEditTripModal}>
+                            Edit Trip
                         </DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
