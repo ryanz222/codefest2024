@@ -178,7 +178,7 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
     if (!trip_id) throw new Error('Trip ID is required for updating');
 
     // Update trip data
-    const { data: tripDataResult, error: tripError } = await client.from('trips').update(tripData).eq('trip_id', trip_id).select().single();
+    const { error: tripError } = await client.from('trips').update(tripData).eq('trip_id', trip_id).select().single();
 
     if (tripError) throw tripError;
 
@@ -209,7 +209,7 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
                 })),
                 {
                     onConflict: 'trip_id,hotel_entry_id',
-                    ignoreDuplicates: false
+                    ignoreDuplicates: false,
                 }
             )
             .select();

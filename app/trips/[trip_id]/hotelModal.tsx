@@ -138,7 +138,7 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, newEventDate: 
 
                 const updatedTrip = {
                     ...trip,
-                    hotels: [...trip.hotels, newHotel],
+                    hotels: [newHotel],
                 };
 
                 await updateTrip(updatedTrip);
@@ -166,7 +166,7 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, newEventDate: 
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose}>
+        <Modal isOpen={isOpen} scrollBehavior="inside" onClose={onClose}>
             <ModalContent>
                 <ModalHeader>Add New Hotel</ModalHeader>
                 <ModalBody>
