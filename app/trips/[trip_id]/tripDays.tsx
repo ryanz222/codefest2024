@@ -33,6 +33,7 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
     const [hotelEntryID, setHotelEntryID] = useState<number | null>(null);
     const [flightEntryID, setFlightEntryID] = useState<number | null>(null);
     const [hotelOffers, setHotelOffers] = useState<Record<string, any>>({});
+    const [fetchingHotels, setFetchingHotels] = useState<Set<string>>(new Set());
 
     // Calculate all days of the trip
     const allDays = useMemo(() => {
@@ -67,17 +68,59 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
     }
 
     // Function to fetch hotel offers
-    const fetchHotelOffers = async (hotelId: string, checkInDate: string, checkOutDate: string) => {
+    const fetchHotelOffers = async (hotelId: string, adults: number, checkInDate: string, checkOutDate: string) => {
         try {
             console.log('Fetching hotel offers for hotelId:', hotelId);
-            const response = await fetch(`/api/hotel-api/getOfferFromHotelId?hotelIds=${hotelId}&adults=1&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`);
+
+            const response = await fetch(
+                `/api/hotel-api/getOfferFromHotelId?hotelIds=${hotelId}&adults=${adults}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`
+            );
+
             if (!response.ok) throw new Error('Failed to fetch hotel offer');
             const data = await response.json();
+
+            console.log('Hotel offers:', data);
+
             setHotelOffers(prev => ({ ...prev, [hotelId]: data[0] }));
+
+            return data[0];
         } catch (error) {
             console.error('Error fetching hotel offer:', error);
         }
     };
+
+    // useEffect to fetch hotel offers
+    useEffect(() => {
+        if (!trip) return;
+
+        trip.hotels.forEach(hotel => {
+            const hotelId = hotel.amadeus_hotel_id;
+
+            if (hotelId && !hotelOffers[hotelId] && !fetchingHotels.has(hotelId)) {
+                setFetchingHotels(prev => new Set(prev).add(hotelId));
+
+                const checkInDate = new Date(tripStartDate);
+
+                checkInDate.setDate(checkInDate.getDate() + hotel.relative_check_in_day);
+                const checkOutDate = new Date(tripStartDate);
+
+                checkOutDate.setDate(checkOutDate.getDate() + hotel.relative_check_out_day);
+
+                fetchHotelOffers(hotelId, 1, checkInDate.toISOString().split('T')[0], checkOutDate.toISOString().split('T')[0]).then(offer => {
+                    if (offer) {
+                        setHotelOffers(prev => ({ ...prev, [hotelId]: offer }));
+                    }
+                    setFetchingHotels(prev => {
+                        const newSet = new Set(prev);
+
+                        newSet.delete(hotelId);
+
+                        return newSet;
+                    });
+                });
+            }
+        });
+    }, [trip, tripStartDate, hotelOffers, fetchingHotels]);
 
     // Function to render a single event
     const renderEvent = (event: Hotel | Flight | Activity, relativeDay: number) => {
@@ -91,23 +134,14 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
 
         if ('hotel_entry_id' in event) {
             eventType = 'Hotel';
-            title = event.ideal_hotel_name || 'Unknown Hotel';
+            const hotelId = event.amadeus_hotel_id ?? '';
+            const hotelOffer = hotelOffers[hotelId];
+
+            // Add null checks and provide default values
+            title = hotelOffer?.hotel?.name || event.ideal_hotel_name || 'N/A';
             description = `Check-in: Day ${event.relative_check_in_day}, Check-out: Day ${event.relative_check_out_day}`;
             address = event.address;
-
-            // Fetch hotel offer if not already fetched
-            const hotelId = event.amadeus_hotel_id;
-            if (hotelId && !hotelOffers[hotelId]) {
-                const checkInDate = new Date(tripStartDate);
-                checkInDate.setDate(checkInDate.getDate() + event.relative_check_in_day);
-                const checkOutDate = new Date(tripStartDate);
-                checkOutDate.setDate(checkOutDate.getDate() + event.relative_check_out_day);
-
-                fetchHotelOffers(hotelId, checkInDate.toISOString().split('T')[0], checkOutDate.toISOString().split('T')[0]);
-            }
-
-            // Use fetched price if available
-            price = hotelOffers[hotelId]?.offers[0]?.price?.total || undefined;
+            price = hotelOffer?.offers?.[0]?.price?.total;
 
             onClick = () => {
                 setHotelEntryID(event.hotel_entry_id || null);
@@ -303,7 +337,7 @@ const EventCard: React.FC<EventCardProps> = ({ eventType, title, description, ad
             <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{description}</p>
             {address && <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{address}</p>}
             {price !== undefined && (
-                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Price: ${price.toFixed(2)} USD</p>
+                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Price: ${price ? price : 'N/A'} USD</p>
             )}
         </div>
     );

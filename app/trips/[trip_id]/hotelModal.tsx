@@ -194,7 +194,7 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, tripStartDate,
                         ))}
                     </Autocomplete>
 
-                    <RadioGroup
+                    {/* <RadioGroup
                         label="Filter Priority"
                         value={hotelFilterPriority}
                         onValueChange={value => setHotelFilterPriority(value as 'PRICE' | 'DISTANCE' | 'RATING' | 'CLOSESTNAME')}
@@ -202,7 +202,7 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, tripStartDate,
                         <Radio value="PRICE">Price</Radio>
                         <Radio value="DISTANCE">Distance</Radio>
                         <Radio value="RATING">Rating</Radio>
-                    </RadioGroup>
+                    </RadioGroup> */}
 
                     {showHotelOptions && (
                         <div className="mt-4">
