@@ -4,6 +4,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const address = searchParams.get('address');
 
+    console.log('Address:', address);
+
     if (!address) {
         return NextResponse.json({ error: 'Address is required' }, { status: 400 });
     }

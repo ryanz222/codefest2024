@@ -396,12 +396,10 @@ export function useTrip(trip_id: string) {
         mutationFn: async (updatedHotel: Hotel) => {
             if (!client || !session) throw new Error('Supabase client or session not initialized');
 
-            const { data, error } = await client
-                .from('hotels')
-                .update(updatedHotel)
-                .eq('hotel_entry_id', updatedHotel.hotel_entry_id)
-                .select()
-                .single();
+            // Destructure hotel_entry_id and the rest of the hotel data
+            const { hotel_entry_id, ...hotelDataToUpdate } = updatedHotel;
+
+            const { data, error } = await client.from('hotels').update(hotelDataToUpdate).eq('hotel_entry_id', hotel_entry_id).select().single();
 
             if (error) throw error;
 

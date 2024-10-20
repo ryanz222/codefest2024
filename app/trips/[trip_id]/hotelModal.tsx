@@ -14,6 +14,10 @@ import {
     Radio,
     Autocomplete,
     AutocompleteItem,
+    Card,
+    CardBody,
+    Select,
+    SelectItem,
 } from '@nextui-org/react';
 
 import { Hotel, useTrip } from '@/hooks/useTrip';
@@ -35,6 +39,8 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, tripStartDate,
     const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showHotelOptions, setShowHotelOptions] = useState(false);
+    const [selectedHotel, setSelectedHotel] = useState<any | null>(null);
 
     // Find the current hotel in the trip data
     const currentHotel = useMemo(() => {
@@ -74,31 +80,72 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, tripStartDate,
     const handlePredictionSelect = (predictionId: string) => {
         const selectedPrediction = predictions.find(p => p.place_id === predictionId);
 
+        console.log('Selected prediction:', selectedPrediction);
         if (selectedPrediction) {
             setHotelAddress(selectedPrediction.description);
+            handleSpecificHotelSubmission(selectedPrediction.description);
         }
     };
 
-    const handleHotelUpdate = async () => {
-        if (currentHotel) {
-            setIsLoading(true);
-            setError(null);
+    const handleSpecificHotelSubmission = async (address: string) => {
+        try {
+            console.log('Submitting specific hotel:', address);
+            // Step 1: Get latitude and longitude from address
+            const geocodeResponse = await fetch(`/api/addressToCoordinate?address=${encodeURIComponent(address)}`);
 
-            try {
-                const updatedHotel: Hotel = {
+            const geocodeData = await geocodeResponse.json();
+
+            if (geocodeData.error) {
+                throw new Error(geocodeData.error);
+            }
+            const { latitude, longitude } = geocodeData;
+
+            // Step 2: Fetch hotel information from Amadeus
+            const hotelResponse = await fetch(
+                `/api/getHotelNearestCoordinate?latitude=${latitude}&longitude=${longitude}&checkInDate=${exactCheckinDate}`
+            );
+            const hotelData = await hotelResponse.json();
+
+            if (hotelData.error) {
+                throw new Error(hotelData.error);
+            }
+
+            console.log('Hotel data:', hotelData);
+            // Step 3: Process and display hotel information
+            if (hotelData.length > 0) {
+                setHotelOptions(hotelData);
+                setSelectedHotelId(null);
+                setShowHotelOptions(true); // Show hotel options after fetching
+            } else {
+                throw new Error('No hotel offers found');
+            }
+        } catch (error) {
+            console.error('Error submitting hotel:', error);
+            setError('An error occurred while fetching hotel options. Please try again.');
+        }
+    };
+
+    const handleHotelSelection = async () => {
+        if (selectedHotelId && trip && exactCheckinDate) {
+            const selectedHotel = hotelOptions.find(hotel => hotel.hotelId === selectedHotelId);
+
+            console.log('Selected hotel:', selectedHotel);
+            if (selectedHotel && tripStartDate) {
+                //Update the hotel in the trip data
+                console.log('Updating hotel:', currentHotel);
+                const updatedHotel = {
                     ...currentHotel,
+                    amadeus_hotel_id: selectedHotel.hotelId as string,
                     address: hotelAddress,
-                    priority: hotelFilterPriority,
-                    amadeus_hotel_id: selectedHotelId || currentHotel.amadeus_hotel_id,
+                    photo_url: '',
+                    hotel_latitude: selectedHotel.geoCode.latitude,
+                    hotel_longitude: selectedHotel.geoCode.longitude,
                 };
 
-                await updateHotel(updatedHotel);
+                console.log('Updated hotel:', updatedHotel);
+
+                updateHotel(updatedHotel as Hotel);
                 onClose();
-            } catch (error) {
-                console.error('Error updating hotel:', error);
-                setError('An error occurred while updating the hotel. Please try again.');
-            } finally {
-                setIsLoading(false);
             }
         }
     };
@@ -115,8 +162,15 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, tripStartDate,
         return null;
     }, [currentHotel, tripStartDate]);
 
+    const handleHotelSelect = (hotelId: string) => {
+        const hotel = hotelOptions.find(h => h.hotelId === hotelId);
+
+        setSelectedHotel(hotel);
+        setSelectedHotelId(hotelId);
+    };
+
     return (
-        <Modal isOpen={isOpen} scrollBehavior="inside" onClose={onClose}>
+        <Modal isOpen={isOpen} scrollBehavior="inside" size="3xl" onClose={onClose}>
             <ModalContent>
                 <ModalHeader>Edit Hotel</ModalHeader>
                 <ModalBody>
@@ -150,13 +204,38 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, tripStartDate,
                         <Radio value="RATING">Rating</Radio>
                     </RadioGroup>
 
+                    {showHotelOptions && (
+                        <div className="mt-4">
+                            <Select
+                                label="Select a hotel"
+                                placeholder="Choose a hotel"
+                                selectedKeys={selectedHotelId ? [selectedHotelId] : []}
+                                onChange={e => handleHotelSelect(e.target.value)}
+                            >
+                                {hotelOptions.map(hotel => (
+                                    <SelectItem key={hotel.hotelId} value={hotel.hotelId}>
+                                        {hotel.name} - {hotel.address.cityName}, {hotel.address.countryCode}
+                                    </SelectItem>
+                                ))}
+                            </Select>
+
+                            {selectedHotel && (
+                                <Card className="mt-4">
+                                    <CardBody>
+                                        <h3 className="text-lg font-bold">{selectedHotel.name}</h3>
+                                    </CardBody>
+                                </Card>
+                            )}
+                        </div>
+                    )}
+
                     {error && <p className="text-red-500">{error}</p>}
                 </ModalBody>
                 <ModalFooter>
                     <Button color="danger" variant="light" onPress={onClose}>
                         Cancel
                     </Button>
-                    <Button color="primary" disabled={isLoading} onPress={handleHotelUpdate}>
+                    <Button color="primary" disabled={isLoading || !selectedHotelId} onPress={handleHotelSelection}>
                         {isLoading ? <Spinner size="sm" /> : 'Update Hotel'}
                     </Button>
                 </ModalFooter>

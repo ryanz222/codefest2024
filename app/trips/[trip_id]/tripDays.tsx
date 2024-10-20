@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ScrollShadow } from '@nextui-org/react';
 import { useTheme } from 'next-themes';
 
@@ -32,6 +32,7 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
     const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
     const [hotelEntryID, setHotelEntryID] = useState<number | null>(null);
     const [flightEntryID, setFlightEntryID] = useState<number | null>(null);
+    const [hotelOffers, setHotelOffers] = useState<Record<string, any>>({});
 
     // Calculate all days of the trip
     const allDays = useMemo(() => {
@@ -65,6 +66,19 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
         ];
     }
 
+    // Function to fetch hotel offers
+    const fetchHotelOffers = async (hotelId: string, checkInDate: string, checkOutDate: string) => {
+        try {
+            console.log('Fetching hotel offers for hotelId:', hotelId);
+            const response = await fetch(`/api/hotel-api/getOfferFromHotelId?hotelIds=${hotelId}&adults=1&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`);
+            if (!response.ok) throw new Error('Failed to fetch hotel offer');
+            const data = await response.json();
+            setHotelOffers(prev => ({ ...prev, [hotelId]: data[0] }));
+        } catch (error) {
+            console.error('Error fetching hotel offer:', error);
+        }
+    };
+
     // Function to render a single event
     const renderEvent = (event: Hotel | Flight | Activity, relativeDay: number) => {
         let eventType: EventType;
@@ -80,7 +94,21 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
             title = event.ideal_hotel_name || 'Unknown Hotel';
             description = `Check-in: Day ${event.relative_check_in_day}, Check-out: Day ${event.relative_check_out_day}`;
             address = event.address;
-            price = 200; //event.price_usd;
+
+            // Fetch hotel offer if not already fetched
+            const hotelId = event.amadeus_hotel_id;
+            if (hotelId && !hotelOffers[hotelId]) {
+                const checkInDate = new Date(tripStartDate);
+                checkInDate.setDate(checkInDate.getDate() + event.relative_check_in_day);
+                const checkOutDate = new Date(tripStartDate);
+                checkOutDate.setDate(checkOutDate.getDate() + event.relative_check_out_day);
+
+                fetchHotelOffers(hotelId, checkInDate.toISOString().split('T')[0], checkOutDate.toISOString().split('T')[0]);
+            }
+
+            // Use fetched price if available
+            price = hotelOffers[hotelId]?.offers[0]?.price?.total || undefined;
+
             onClick = () => {
                 setHotelEntryID(event.hotel_entry_id || null);
                 setIsHotelModalOpen(true);
