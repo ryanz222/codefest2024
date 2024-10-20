@@ -1,53 +1,71 @@
-# Next.js & NextUI Template
+#TripTonic
+<img width="549" alt="Screenshot 2024-10-20 at 3 44 52 PM" src="https://github.com/user-attachments/assets/1700b2c6-3c4f-43ff-a01d-5e32833c2ab8">
 
-This is a template for creating applications using Next.js 14 (app directory) and NextUI (v2).
+**Project Overview**
 
-[Try it on CodeSandbox](https://githubbox.com/nextui-org/next-app-template)
+This app lets a user share social media content (Instagram Reels, TikTok videos, etc.) to plan their travels by using AI to recommend hotels, flights, and activities based on the content shared. The app enables users to replicate the travel experiences of influencers by converting content into structured travel itineraries.
 
-## Technologies Used
+## Key Features
+- **Supabase Database Integration**: 
+  - Trips, Hotels, Flights, and Activities tables store user travel data.
+  - Row-level security enforced using JWT from Clerk Authentication for personalized data access.
+  
+- **Clerk Authentication**: 
+  - Provides user authentication and JWT-based security.
 
-- [Next.js 14](https://nextjs.org/docs/getting-started)
-- [NextUI v2](https://nextui.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Tailwind Variants](https://tailwind-variants.org)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Framer Motion](https://www.framer.com/motion/)
-- [next-themes](https://github.com/pacocoursey/next-themes)
+- **Google Gemini API**: 
+  - Displays trip plans to users and calls Amadeus hotel search APIs to return relevant hotel offers.
 
-## How to Use
+- **Amadeus APIs**: 
+  - Includes Amadeus hotel search, hotel offers, and flight search functionalities.
+  
+- **Google Places API**: 
+  - Enriches travel data by fetching location-based recommendations.
 
-### Use the template with create-next-app
+- **Mapbox Integration**: 
+  - Allows users to visualize their trips on a map, providing an interactive travel planning experience.
 
-To create a new project based on this template using `create-next-app`, run the following command:
+- **NextUI Components**: 
+  - Provides a clean, responsive user interface for users to interact with the app.
+  
+- **Backend**: 
+  - Node.js APIs handle business logic and API integrations between Supabase, Amadeus, and Google Gemini.
 
-```bash
-npx create-next-app -e https://github.com/nextui-org/next-app-template
-```
+- **Hosting**: 
+  - The app is hosted on **Vercel** using Next.js for fast and scalable web deployment.
 
-### Install dependencies
+## Project Architecture
 
-You can use one of them `npm`, `yarn`, `pnpm`, `bun`, Example using `npm`:
+- **Frontend**: 
+  - Built with Next.js and styled using NextUI for a modern, responsive UI.
+  
+- **Backend**: 
+  - Node.js server handling API calls, including integrations with Amadeus, Google Places, and Google Gemini APIs.
 
-```bash
-npm install
-```
+- **Database**: 
+  - Supabase is used to store trip data, with table structures for trips, hotels, flights, and activities.
 
-### Run the development server
+- **Map Integration**: 
+  - A Mapbox map shows the user's trip and relevant locations like hotels and activities.
 
-```bash
-npm run dev
-```
+## How It Works
 
-### Setup pnpm (optional)
+1. **User Inputs Social Media Content**: 
+   - The user shares an Instagram Reel or TikTok related to a travel experience.
+   
+2. **AI-Powered Trip Planning**: 
+   - The app processes the content and generates recommendations for hotels, flights, and activities based on the influencer's travel content.
+   
+3. **Trip Visualization**: 
+   - The trip is visualized on a Mapbox-powered map, displaying key locations like hotels, activities, and landmarks.
+   
+4. **Travel Recommendations**: 
+   - AI, via the Google Gemini API and Amadeus APIs, provides hotel and flight offers that align with the user’s trip preferences.
 
-If you are using `pnpm`, you need to add the following code to your `.npmrc` file:
-
-```bash
-public-hoist-pattern[]=*@nextui-org/*
-```
-
-After modifying the `.npmrc` file, you need to run `pnpm install` again to ensure that the dependencies are installed correctly.
-
-## License
-
-Licensed under the [MIT license](https://github.com/nextui-org/next-app-template/blob/main/LICENSE).
+## Tech Stack
+- **Frontend**: Next.js, NextUI
+- **Backend**: Node.js
+- **APIs**: Google Gemini API, OpenAI GPT4o, Amadeus API, Google Places API, Mapbox
+- **Database**: Supabase
+- **Authentication**: Clerk
+- **Hosting**: Vercel
