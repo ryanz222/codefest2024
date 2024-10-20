@@ -119,6 +119,41 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                                     title = event.ideal_hotel_name || 'Unknown Hotel';
                                     description = `Check-in: Day ${event.relative_check_in_day}, Check-out: Day ${event.relative_check_out_day}`;
                                     address = event.address || '';
+
+                                    // Add onClick handler to open the hotel modal
+                                    return (
+                                        <div
+                                            key={`${event.creator_id}-${event.trip_id}-${title}`}
+                                            className={`${theme === 'dark' ? eventTypeColors[eventType].dark : eventTypeColors[eventType].light
+                                                } shadow-sm rounded-md px-3 py-2 mb-2`}
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => {
+                                                setHotelEntryID(event.hotel_entry_id || null);
+                                                setIsHotelModalOpen(true);
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    setHotelEntryID(event.hotel_entry_id || null);
+                                                    setIsHotelModalOpen(true);
+                                                }
+                                            }}
+                                        >
+                                            <div className="flex items-center">
+                                                {IconComponent && <IconComponent className="w-4 h-4 mr-2" />}
+                                                <h3 className="font-semibold">{title}</h3>
+                                            </div>
+                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{description}</p>
+                                            {address && (
+                                                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{address}</p>
+                                            )}
+                                            {'price_usd' in event && (
+                                                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    Price: ${(event.price_usd as number).toFixed(2)} USD
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
                                 } else if ('flight_entry_id' in event) {
                                     eventType = 'Flight';
                                     IconComponent = getIconComponent(eventType);
