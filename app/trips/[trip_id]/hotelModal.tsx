@@ -22,8 +22,8 @@ import { Hotel, useTrip } from '@/hooks/useTrip';
 interface HotelModalProps {
     isOpen: boolean;
     onClose: () => void;
-    newEventDate: Date | null;
-    tripStartDate: Date | null;
+    newEventDate: Date;
+    tripStartDate: Date;
     trip_id: string;
 }
 

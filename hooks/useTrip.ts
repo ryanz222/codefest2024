@@ -23,13 +23,13 @@ export interface Hotel {
     photo_url?: string; // Pulled from Google Place API once we know the address
 
     // If no hotel_id is provided, these are used to get the best hotel from amadeus hotel list API
-    search_latitude: number;
-    search_longitude: number;
-    search_radius: number;
-    search_radius_unit: 'KM' | 'MI';
-    allowed_chain_codes: string[];
-    allowed_ratings: Array<1 | 2 | 3 | 4 | 5>;
-    required_amenities: Array<
+    search_latitude?: number;
+    search_longitude?: number;
+    search_radius?: number;
+    search_radius_unit?: 'KM' | 'MI';
+    allowed_chain_codes?: string[];
+    allowed_ratings?: Array<1 | 2 | 3 | 4 | 5>;
+    required_amenities?: Array<
         | 'SWIMMING_POOL'
         | 'SPA'
         | 'FITNESS_CENTER'
@@ -60,7 +60,7 @@ export interface Hotel {
         | 'WI-FI_IN_ROOM'
         | 'ROOM_SERVICE'
     >;
-    priority: 'PRICE' | 'DISTANCE' | 'RATING' | 'CLOSESTNAME';
+    priority?: 'PRICE' | 'DISTANCE' | 'RATING' | 'CLOSESTNAME';
     ideal_hotel_name?: string;
 }
 

@@ -82,7 +82,9 @@ export default function AboutTrip({ trip_id, handleOpenEditTripModal, tripStartD
                         <Calendar
                             aria-label="Trip start date"
                             minValue={today(getLocalTimeZone())}
+                            showMonthAndYearPickers={false}
                             value={parseDate(tripStartDate.toISOString().split('T')[0])}
+                            visibleMonths={1}
                             onChange={date => {
                                 const isoDate = date.toString();
                                 const selectedDate = new Date(isoDate);

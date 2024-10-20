@@ -16,9 +16,9 @@ import { useTrip } from '@/hooks/useTrip';
 
 export default function ItineraryPage({ params }: { params: Params }) {
     const { trip_id } = params;
-    const [newEventDate, setNewEventDate] = useState<Date | null>(null);
     const { trip } = useTrip(trip_id);
 
+    // States for the trip start date and new event date
     const [tripStartDate, setTripStartDate] = useState<Date>(() => {
         const date = new Date();
 
@@ -26,12 +26,15 @@ export default function ItineraryPage({ params }: { params: Params }) {
 
         return date;
     });
+    const [newEventDate, setNewEventDate] = useState<Date>(tripStartDate);
 
+    // States for the modals
     const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
     const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
     const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
     const [isEditTripModalOpen, setIsEditTripModalOpen] = useState(false);
 
+    // Function to handle adding an event to the trip
     const handleAddEvent = (eventType: 'Flight' | 'Hotel' | 'Activity', date: Date) => {
         setNewEventDate(date);
         if (eventType === 'Flight') {
@@ -41,10 +44,6 @@ export default function ItineraryPage({ params }: { params: Params }) {
         } else if (eventType === 'Activity') {
             setIsActivityModalOpen(true);
         }
-    };
-
-    const handleOpenEditTripModal = () => {
-        setIsEditTripModalOpen(true);
     };
 
     return (
@@ -57,7 +56,7 @@ export default function ItineraryPage({ params }: { params: Params }) {
 
                 {/* About Trip */}
                 <AboutTrip
-                    handleOpenEditTripModal={handleOpenEditTripModal}
+                    handleOpenEditTripModal={() => setIsEditTripModalOpen(true)}
                     setTripStartDate={setTripStartDate}
                     tripStartDate={tripStartDate}
                     trip_id={trip_id}
