@@ -19,6 +19,7 @@ def home():
     return "Instagram Reel Processing API is running!"
 
 # Processing logic
+# Processing logic
 def process_reel(reel_url):
     # Configure headless Chrome
     chrome_options = Options()
@@ -26,13 +27,9 @@ def process_reel(reel_url):
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     
-    # Determine the environment (local or production)
-    if os.environ.get('IS_DOCKER'):
-        # Use ChromeDriver path from Docker
-        service = Service(executable_path="/usr/local/bin/chromedriver")
-    else:
-        # Use the local ChromeDriver path
-        service = Service(executable_path="/opt/homebrew/bin/chromedriver")  # Local path
+    # Use ChromeDriver path and binary location from environment variables
+    chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    service = Service(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
 
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
