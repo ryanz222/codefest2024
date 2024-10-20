@@ -20,7 +20,7 @@ export const Navbar = () => {
             <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
                 <NavbarBrand as="li" className="gap-3 max-w-fit">
                     <NextLink className="flex justify-start items-center gap-1" href="/">
-                        <Logo size={28} className="pb-1" />
+                        <Logo size={26} className="pb-1" />
                         <p className="font-bold text-inherit">Travelloo</p>
                     </NextLink>
                 </NavbarBrand>
