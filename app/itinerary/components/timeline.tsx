@@ -19,6 +19,8 @@ import {
     Autocomplete,
     AutocompleteItem,
     Spinner,
+    Radio,
+    RadioGroup,
 } from '@nextui-org/react';
 import { VariableSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -221,6 +223,8 @@ export default function TripTimeline({ events, setEvents }: TripTimelineProps) {
     const [showPredictions, setShowPredictions] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hotelOptions, setHotelOptions] = useState<any[]>([]);
+    const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
 
     const onLoad = (autocomplete: google.maps.places.Autocomplete) => {
         setAutocomplete(autocomplete);
@@ -417,41 +421,29 @@ export default function TripTimeline({ events, setEvents }: TripTimelineProps) {
 
             // Step 2: Get tomorrow's date for check-in
             const tomorrow = new Date();
+
             tomorrow.setDate(tomorrow.getDate() + 1);
             const checkInDate = tomorrow.toISOString().split('T')[0];
 
             // Step 3: Fetch hotel information from Amadeus
-            const hotelResponse = await fetch(`/api/hotels?latitude=${latitude}&longitude=${longitude}&checkInDate=${checkInDate}`);
-            console.log('Hotel response:', hotelResponse);
+            const hotelResponse = await fetch(`/api/getHotelNearestCoordinate?latitude=${latitude}&longitude=${longitude}&checkInDate=${checkInDate}`);
             const hotelData = await hotelResponse.json();
 
             if (hotelData.error) {
                 throw new Error(hotelData.error);
             }
 
+            console.log('Hotel data:', hotelData);
             // Step 4: Process and display hotel information
             if (hotelData.length > 0) {
-                const hotel = hotelData[0]; // Get the first hotel offer
-                const newEvent: Event = {
-                    id: Date.now(),
-                    date: newEventDate!,
-                    type: 'Hotel',
-                    location: {
-                        address: hotel.hotel.name,
-                        coordinates: [longitude, latitude],
-                    },
-                    title: hotel.hotel.name,
-                    description: `Price: ${hotel.offers[0].price.total} ${hotel.offers[0].price.currency}`,
-                };
-
-                setEvents(prevEvents => [...prevEvents, newEvent]);
-                setIsHotelModalOpen(false);
+                setHotelOptions(hotelData);
+                setSelectedHotelId(null);
             } else {
                 throw new Error('No hotel offers found');
             }
         } catch (error) {
             console.error('Error submitting hotel:', error);
-            // Handle error (e.g., show error message to user)
+            setError('An error occurred while fetching hotel options. Please try again.');
         }
     };
 
@@ -459,6 +451,31 @@ export default function TripTimeline({ events, setEvents }: TripTimelineProps) {
         // Skeleton handler for hotel search submission
         console.log('Submitting hotel search:', { city, priority });
         // Implement the actual submission logic later
+    };
+
+    const handleHotelSelection = () => {
+        if (selectedHotelId) {
+            const selectedHotel = hotelOptions.find(hotel => hotel.hotelId === selectedHotelId);
+
+            if (selectedHotel) {
+                const newEvent: Event = {
+                    id: Date.now(),
+                    date: newEventDate!,
+                    type: 'Hotel',
+                    location: {
+                        address: hotelAddress,
+                        coordinates: [selectedHotel.geoCode.longitude, selectedHotel.geoCode.latitude],
+                    },
+                    title: selectedHotel.name,
+                    description: '',
+                };
+
+                setEvents(prevEvents => [...prevEvents, newEvent]);
+                setIsHotelModalOpen(false);
+                setHotelOptions([]);
+                setSelectedHotelId(null);
+            }
+        }
     };
 
     return (
@@ -547,24 +564,40 @@ export default function TripTimeline({ events, setEvents }: TripTimelineProps) {
                         </ButtonGroup>
 
                         {hotelModalTab === 'specific' ? (
-                            <Autocomplete
-                                defaultItems={predictions}
-                                label="Hotel Address"
-                                placeholder="Enter hotel address"
-                                onInputChange={handleInputChange}
-                                listboxProps={{ emptyContent: <p>Start typing an address...</p> }}
-                                onSelectionChange={(key) => {
-                                    if (typeof key === 'string') {
-                                        handlePredictionSelect(key);
-                                    }
-                                }}
-                            >
-                                {(prediction) => (
-                                    <AutocompleteItem key={prediction.place_id} textValue={prediction.description}>
-                                        {prediction.description}
-                                    </AutocompleteItem>
+                            <>
+                                <Autocomplete
+                                    defaultItems={predictions}
+                                    label="Hotel Address"
+                                    listboxProps={{ emptyContent: <p>Start typing an address...</p> }}
+                                    placeholder="Enter hotel address"
+                                    onInputChange={handleInputChange}
+                                    onSelectionChange={(key) => {
+                                        if (typeof key === 'string') {
+                                            handlePredictionSelect(key);
+                                        }
+                                    }}
+                                >
+                                    {(prediction) => (
+                                        <AutocompleteItem key={prediction.place_id} textValue={prediction.description}>
+                                            {prediction.description}
+                                        </AutocompleteItem>
+                                    )}
+                                </Autocomplete>
+
+                                {hotelOptions.length > 0 && (
+                                    <RadioGroup
+                                        label="Select a hotel"
+                                        value={selectedHotelId}
+                                        onValueChange={setSelectedHotelId}
+                                    >
+                                        {hotelOptions.map((hotel) => (
+                                            <Radio key={hotel.hotelId} value={hotel.hotelId}>
+                                                {hotel.name}
+                                            </Radio>
+                                        ))}
+                                    </RadioGroup>
                                 )}
-                            </Autocomplete>
+                            </>
                         ) : (
                             <>
                                 <Input label="City" placeholder="Enter city name" value={hotelCity} onChange={e => setHotelCity(e.target.value)} />
@@ -597,8 +630,12 @@ export default function TripTimeline({ events, setEvents }: TripTimelineProps) {
                         <Button color="danger" variant="light" onPress={() => setIsHotelModalOpen(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" onPress={handleAddHotel} disabled={isLoading}>
-                            {isLoading ? <Spinner size="sm" /> : 'Add Hotel'}
+                        <Button
+                            color="primary"
+                            disabled={isLoading || (hotelOptions.length > 0 && !selectedHotelId)}
+                            onPress={hotelOptions.length > 0 ? handleHotelSelection : handleAddHotel}
+                        >
+                            {isLoading ? <Spinner size="sm" /> : hotelOptions.length > 0 ? 'Confirm Hotel' : 'Search Hotels'}
                         </Button>
                     </ModalFooter>
                 </ModalContent>
