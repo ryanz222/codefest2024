@@ -52,7 +52,7 @@ export default function ItineraryPage({ params }: { params: Params }) {
             <MapComponent trip_id={trip_id} />
 
             {/* Floating left panel */}
-            <div className="absolute flex gap-4 flex-col top-0 left-0 w-1/3 h-full p-4 overflow-auto">
+            <div className="absolute flex gap-4 flex-col top-0 left-0 min-w-[400px] h-full p-4 overflow-auto">
 
                 {/* About Trip */}
                 <AboutTrip
