@@ -412,6 +412,43 @@ export function useTrip(trip_id: string) {
         },
     });
 
+    // Create flight data
+    const createFlightMutation = useMutation({
+        mutationFn: async (newFlight: Omit<Flight, 'flight_entry_id' | 'creator_id'>): Promise<number> => {
+            if (!client || !session) throw new Error('Supabase client or session not initialized');
+
+            const { data, error } = await client.from('flights').insert(newFlight).select('flight_entry_id').single();
+
+            if (error) throw error;
+
+            return data.flight_entry_id;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['trip', trip_id] });
+        },
+    });
+
+    // Update flight data
+    const updateFlightMutation = useMutation({
+        mutationFn: async (updatedFlight: Flight) => {
+            if (!client || !session) throw new Error('Supabase client or session not initialized');
+
+            const { data, error } = await client
+                .from('flights')
+                .update(updatedFlight)
+                .eq('flight_entry_id', updatedFlight.flight_entry_id)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['trip', trip_id] });
+        },
+    });
+
     return {
         trip: tripQuery.data,
         isLoading: tripQuery.isLoading || !client,
@@ -421,5 +458,7 @@ export function useTrip(trip_id: string) {
         deleteTrip: deleteTripMutation.mutate,
         createHotel: createHotelMutation.mutateAsync,
         updateHotel: updateHotelMutation.mutate,
+        createFlight: createFlightMutation.mutateAsync,
+        updateFlight: updateFlightMutation.mutate,
     };
 }
