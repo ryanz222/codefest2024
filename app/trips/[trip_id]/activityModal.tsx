@@ -1,8 +1,18 @@
 // app/trips/[trip_id]/activityModal.tsx
 'use client';
 import React, { useState } from 'react';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, Button, Textarea, Autocomplete, AutocompleteItem } from '@nextui-org/react';
-
+import {
+    Modal,
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    Input,
+    Button,
+    Textarea,
+    Autocomplete,
+    AutocompleteItem,
+} from '@nextui-org/react';
 import { Activity, useTrip } from '@/hooks/useTrip';
 
 interface ActivityModalProps {
@@ -54,13 +64,14 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, newEvent
 
         const relativeDay = Math.floor((date.getTime() - tripStartDate.getTime()) / (1000 * 60 * 60 * 24));
 
-        const newActivity: Omit<Activity, 'id'> = {
+        const newActivity: Activity = {
             trip_id: trip.trip_id,
             creator_id: trip.creator_id,
             relative_day: relativeDay,
             name: activityName,
             description: activityDescription,
             address: activityAddress,
+            price_usd: 0,
         };
 
         const updatedTrip = {
@@ -77,8 +88,17 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, newEvent
             <ModalContent>
                 <ModalHeader>Add New Activity</ModalHeader>
                 <ModalBody>
-                    <Input isReadOnly label="Date" value={date?.toDateString() || ''} />
-                    <Input label="Activity Name" placeholder="Enter activity name" value={activityName} onValueChange={setActivityName} />
+                    <Input
+                        label="Date"
+                        value={date?.toDateString() || ''}
+                        isReadOnly
+                    />
+                    <Input
+                        label="Activity Name"
+                        placeholder="Enter activity name"
+                        value={activityName}
+                        onValueChange={setActivityName}
+                    />
                     <Textarea
                         label="Description"
                         placeholder="Enter description"
