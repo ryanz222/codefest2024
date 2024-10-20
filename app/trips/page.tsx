@@ -24,6 +24,7 @@ export default function Trips() {
         trip_name: '',
         length_in_days: 1,
         is_published: false,
+        adults: 2,
     });
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [searchTerm, setSearchTerm] = useState('');
@@ -41,7 +42,7 @@ export default function Trips() {
     const handleCreateTrip = () => {
         if (newTrip.trip_name.trim()) {
             addTrip(newTrip);
-            setNewTrip({ trip_name: '', length_in_days: 1, is_published: false });
+            setNewTrip({ trip_name: '', length_in_days: 1, is_published: false, adults: 2 });
             onOpenChange();
         }
     };
@@ -140,6 +141,13 @@ export default function Trips() {
                                     placeholder="Enter trip name"
                                     value={newTrip.trip_name}
                                     onChange={e => setNewTrip({ ...newTrip, trip_name: e.target.value })}
+                                />
+                                <Input
+                                    label="Number of Adults"
+                                    placeholder="Enter number of adults"
+                                    type="number"
+                                    value={newTrip.adults?.toString() || '2'}
+                                    onChange={e => setNewTrip({ ...newTrip, adults: parseInt(e.target.value) || 2 })}
                                 />
                                 <Input
                                     label="Length in Days"

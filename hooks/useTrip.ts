@@ -7,8 +7,53 @@ import { useState, useEffect } from 'react';
 
 import { TripDescription } from './useTrips';
 
+export enum SearchRadiusUnit {
+    KM = 'KM',
+    MI = 'MI',
+}
+
+export enum Priority {
+    PRICE = 'PRICE',
+    DISTANCE = 'DISTANCE',
+    RATING = 'RATING',
+    CLOSESTNAME = 'CLOSESTNAME',
+}
+
+export enum AmenityType {
+    SWIMMING_POOL = 'SWIMMING_POOL',
+    SPA = 'SPA',
+    FITNESS_CENTER = 'FITNESS_CENTER',
+    AIR_CONDITIONING = 'AIR_CONDITIONING',
+    RESTAURANT = 'RESTAURANT',
+    PARKING = 'PARKING',
+    PETS_ALLOWED = 'PETS_ALLOWED',
+    AIRPORT_SHUTTLE = 'AIRPORT_SHUTTLE',
+    BUSINESS_CENTER = 'BUSINESS_CENTER',
+    DISABLED_FACILITIES = 'DISABLED_FACILITIES',
+    WIFI = 'WIFI',
+    MEETING_ROOMS = 'MEETING_ROOMS',
+    NO_KID_ALLOWED = 'NO_KID_ALLOWED',
+    TENNIS = 'TENNIS',
+    GOLF = 'GOLF',
+    KITCHEN = 'KITCHEN',
+    BABY_SITTING = 'BABY-SITTING',
+    BEACH = 'BEACH',
+    CASINO = 'CASINO',
+    JACUZZI = 'JACUZZI',
+    SAUNA = 'SAUNA',
+    MASSAGE = 'MASSAGE',
+    VALET_PARKING = 'VALET_PARKING',
+    BAR = 'BAR',
+    LOUNGE = 'LOUNGE',
+    MINIBAR = 'MINIBAR',
+    TELEVISION = 'TELEVISION',
+    WI_FI_IN_ROOM = 'WI-FI_IN_ROOM',
+    ROOM_SERVICE = 'ROOM_SERVICE',
+}
+
 export interface Hotel {
-    // Id to connect hotel to trip and creator
+    // Ids
+    hotel_entry_id?: number;
     trip_id: string;
     creator_id: string;
 
@@ -27,46 +72,17 @@ export interface Hotel {
     search_latitude?: number;
     search_longitude?: number;
     search_radius?: number;
-    search_radius_unit?: 'KM' | 'MI';
+    search_radius_unit?: SearchRadiusUnit;
     allowed_chain_codes?: string[];
     allowed_ratings?: Array<1 | 2 | 3 | 4 | 5>;
-    required_amenities?: Array<
-        | 'SWIMMING_POOL'
-        | 'SPA'
-        | 'FITNESS_CENTER'
-        | 'AIR_CONDITIONING'
-        | 'RESTAURANT'
-        | 'PARKING'
-        | 'PETS_ALLOWED'
-        | 'AIRPORT_SHUTTLE'
-        | 'BUSINESS_CENTER'
-        | 'DISABLED_FACILITIES'
-        | 'WIFI'
-        | 'MEETING_ROOMS'
-        | 'NO_KID_ALLOWED'
-        | 'TENNIS'
-        | 'GOLF'
-        | 'KITCHEN'
-        | 'BABY-SITTING'
-        | 'BEACH'
-        | 'CASINO'
-        | 'JACUZZI'
-        | 'SAUNA'
-        | 'MASSAGE'
-        | 'VALET_PARKING'
-        | 'BAR'
-        | 'LOUNGE'
-        | 'MINIBAR'
-        | 'TELEVISION'
-        | 'WI-FI_IN_ROOM'
-        | 'ROOM_SERVICE'
-    >;
-    priority?: 'PRICE' | 'DISTANCE' | 'RATING' | 'CLOSESTNAME';
+    required_amenities?: AmenityType[];
+    priority?: Priority;
     ideal_hotel_name?: string;
 }
 
 export interface Activity {
-    // Id to connect activity to trip and creator
+    // Ids
+    activity_entry_id?: number;
     trip_id: string;
     creator_id: string;
 
@@ -84,7 +100,8 @@ export interface Activity {
 }
 
 export interface Flight {
-    // Id to connect flight to trip and creator
+    // Ids
+    flight_entry_id?: number;
     trip_id: string;
     creator_id: string;
 
@@ -183,6 +200,7 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
     if (hotels && hotels.length > 0) {
         const { error: hotelError } = await client.from('hotels').upsert(
             hotels.map(h => ({
+                hotel_entry_id: h.hotel_entry_id, // Include if present for updates
                 trip_id: h.trip_id,
                 creator_id: h.creator_id,
                 relative_check_in_day: h.relative_check_in_day,
@@ -202,7 +220,10 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
                 priority: h.priority,
                 ideal_hotel_name: h.ideal_hotel_name,
             })),
-            { onConflict: 'trip_id,amadeus_hotel_id' }
+            {
+                onConflict: 'trip_id,hotel_entry_id',
+                ignoreDuplicates: false, // This will update existing rows
+            }
         );
 
         if (hotelError) throw hotelError;
@@ -210,44 +231,55 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
 
     // Handle flights
     if (flights && flights.length > 0) {
-        // const { error: flightError } = await client.from('flights').upsert(
-        //     flights.map(f => ({
-        //         trip_id: f.trip_id,
-        //         creator_id: f.creator_id,
-        //         flight_api_id: f.id,
-        //         destination_city_code: f.destination_city_code,
-        //         departure_city_code: f.departure_city_code,
-        //         relative_departure_day: f.relative_departure_day,
-        //         relative_return_day: f.relative_return_day,
-        //         travel_class: f.travel_class,
-        //         non_stop: f.non_stop,
-        //         currency: f.currency,
-        //         max_price: f.max_price,
-        //         included_airline_codes: f.included_airline_codes,
-        //         excluded_airline_codes: f.excluded_airline_codes,
-        //     })),
-        //     { onConflict: 'trip_id,flight_api_id' }
-        // );
+        const { error: flightError } = await client.from('flights').upsert(
+            flights.map(f => ({
+                flight_entry_id: f.flight_entry_id, // Include if present for updates
+                trip_id: f.trip_id,
+                creator_id: f.creator_id,
+                id: f.id,
+                destination_city_code: f.destination_city_code,
+                departure_city_code: f.departure_city_code,
+                relative_departure_day: f.relative_departure_day,
+                relative_return_day: f.relative_return_day,
+                travel_class: f.travel_class,
+                non_stop: f.non_stop,
+                currency: f.currency,
+                max_price: f.max_price,
+                included_airline_codes: f.included_airline_codes,
+                excluded_airline_codes: f.excluded_airline_codes,
+            })),
+            {
+                onConflict: 'flight_entry_id',
+                ignoreDuplicates: false, // Updates existing rows
+            }
+        );
 
-        // if (flightError) throw flightError;
+        if (flightError) throw flightError;
     }
 
     // Handle activities
     if (activities && activities.length > 0) {
-        // const { error: activityError } = await client.from('activities').upsert(
-        //     activities.map(a => ({
-        //         trip_id: a.trip_id,
-        //         creator_id: a.creator_id,
-        //         activity_api_id: a.id,
-        //         name: a.name,
-        //         photo_url: a.photo_url,
-        //         address: a.address,
-        //         description: a.description,
-        //     })),
-        //     { onConflict: 'trip_id,activity_api_id' }
-        // );
+        const { error: activityError } = await client.from('activities').upsert(
+            activities.map(a => ({
+                activity_entry_id: a.activity_entry_id, // Include if present for updates
+                trip_id: a.trip_id,
+                creator_id: a.creator_id,
+                name: a.name,
+                relative_day: a.relative_day,
+                price_usd: a.price_usd,
+                photo_url: a.photo_url,
+                address: a.address,
+                description: a.description,
+                latitude: a.latitude,
+                longitude: a.longitude,
+            })),
+            {
+                onConflict: 'activity_entry_id',
+                ignoreDuplicates: false, // Updates existing rows
+            }
+        );
 
-        // if (activityError) throw activityError;
+        if (activityError) throw activityError;
     }
 
     return fetchTrip(client, trip_id);
