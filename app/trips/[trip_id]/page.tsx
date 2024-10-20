@@ -16,7 +16,7 @@ import { useTrip } from '@/hooks/useTrip';
 
 export default function ItineraryPage({ params }: { params: Params }) {
     const { trip_id } = params;
-    const { trip } = useTrip(trip_id);
+    const { trip, updateTrip } = useTrip(trip_id);
 
     // States for the trip start date and new event date
     const [tripStartDate, setTripStartDate] = useState<Date>(() => {
@@ -26,25 +26,9 @@ export default function ItineraryPage({ params }: { params: Params }) {
 
         return date;
     });
-    const [newEventDate, setNewEventDate] = useState<Date>(tripStartDate);
 
     // States for the modals
-    const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
-    const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
-    const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
     const [isEditTripModalOpen, setIsEditTripModalOpen] = useState(false);
-
-    // Function to handle adding an event to the trip
-    const handleAddEvent = (eventType: 'Flight' | 'Hotel' | 'Activity', date: Date) => {
-        setNewEventDate(date);
-        if (eventType === 'Flight') {
-            setIsFlightModalOpen(true);
-        } else if (eventType === 'Hotel') {
-            setIsHotelModalOpen(true);
-        } else if (eventType === 'Activity') {
-            setIsActivityModalOpen(true);
-        }
-    };
 
     return (
         <div className="relative w-full h-[calc(100vh-64px)]">
@@ -68,33 +52,6 @@ export default function ItineraryPage({ params }: { params: Params }) {
                 {/* Chatbot */}
                 <TripChatbot />
             </div>
-
-            {/* Flight Modal */}
-            <FlightModal
-                isOpen={isFlightModalOpen}
-                newEventDate={newEventDate}
-                tripStartDate={tripStartDate}
-                trip_id={trip_id}
-                onClose={() => setIsFlightModalOpen(false)}
-            />
-
-            {/* Hotel Modal */}
-            <HotelModal
-                isOpen={isHotelModalOpen}
-                newEventDate={newEventDate}
-                tripStartDate={tripStartDate}
-                trip_id={trip_id}
-                onClose={() => setIsHotelModalOpen(false)}
-            />
-
-            {/* Activity Modal */}
-            <ActivityModal
-                isOpen={isActivityModalOpen}
-                newEventDate={newEventDate}
-                tripStartDate={tripStartDate}
-                trip_id={trip_id}
-                onClose={() => setIsActivityModalOpen(false)}
-            />
 
             {/* Edit Trip Modal */}
             <EditTripModal

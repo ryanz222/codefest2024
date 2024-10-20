@@ -92,7 +92,6 @@ export interface Flight {
     creator_id: string;
 
     // Information needed to get prices from amadeus flight offer API
-    id: string;
     destination_city_code: string;
     departure_city_code: string;
     relative_departure_day: number;
@@ -229,7 +228,6 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
                 flight_entry_id: f.flight_entry_id, // Include if present for updates
                 trip_id: f.trip_id,
                 creator_id: f.creator_id,
-                id: f.id,
                 destination_city_code: f.destination_city_code,
                 departure_city_code: f.departure_city_code,
                 relative_departure_day: f.relative_departure_day,
