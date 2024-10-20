@@ -8,7 +8,7 @@ import { fontSans } from '@/config/fonts';
 import { Navbar } from '@/components/navbar';
 
 export const metadata = {
-    title: 'Travelloo',
+    title: 'TripTonic',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

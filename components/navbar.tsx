@@ -35,8 +35,7 @@ export const Navbar = () => {
             <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
                 <NavbarBrand as="li" className="gap-3 max-w-fit">
                     <NextLink className="flex justify-start items-center gap-1" href="/">
-                        <Logo className="pb-1" isDarkMode={theme === 'dark'} size={26} />
-                        <p className="font-bold text-inherit">Travelloo</p>
+                        <img src="/image.png" alt="TripTonic Logo" className="h-10 w-auto" />
                     </NextLink>
                 </NavbarBrand>
             </NavbarContent>
