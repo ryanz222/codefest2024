@@ -1,4 +1,4 @@
-#TripTonic
+# TripTonic
 <img width="549" alt="Screenshot 2024-10-20 at 3 44 52 PM" src="https://github.com/user-attachments/assets/1700b2c6-3c4f-43ff-a01d-5e32833c2ab8">
 
 **Project Overview**
