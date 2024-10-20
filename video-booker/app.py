@@ -25,14 +25,10 @@ def process_reel(reel_url):
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
-    
-    # Determine the environment (local or production)
-    if os.environ.get('IS_DOCKER'):
-        # Use ChromeDriver path from Docker
-        service = Service(executable_path="/usr/local/bin/chromedriver")
-    else:
-        # Use the local ChromeDriver path
-        service = Service(executable_path="/opt/homebrew/bin/chromedriver")  # Local path
+    chrome_options.binary_location = os.getenv('GOOGLE_CHROME_BIN', '/usr/bin/google-chrome')
+
+    # Use ChromeDriver path from environment variables
+    service = Service(os.getenv('CHROMEDRIVER_PATH', '/usr/local/bin/chromedriver'))
 
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
@@ -105,6 +101,7 @@ def process_reel(reel_url):
     os.remove(wav_file_path)
 
     return caption_text, transcription
+
 
 # Flask route to handle API request and process the reel
 @app.route('/api/process', methods=['POST'])
