@@ -3,7 +3,7 @@ import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ScrollSh
 import { useTheme } from 'next-themes';
 
 import { HotelIcon, PlaneIcon, ActivityIcon, DarkModeHotelIcon, DarkModePlaneIcon, DarkModeActivityIcon } from '@/components/icons';
-import { Activity, TripData } from '@/hooks/useTrip';
+import { TripData } from '@/hooks/useTrip';
 
 type EventType = 'Hotel' | 'Flight' | 'Activity';
 
@@ -100,7 +100,6 @@ const TripDays: React.FC<TripDaysProps> = ({ trip, tripStartDate, onAddEvent }) 
     return (
         <div className={`h-full w-full p-4 overflow-hidden rounded-xl shadow-lg flex flex-col ${bgStyle}`}>
             <ScrollShadow hideScrollBar className="h-full">
-
                 {allDays.map((date, index) => {
                     const { weekday, monthDay, year } = {
                         weekday: date.toLocaleString('default', { weekday: 'short' }),
@@ -137,23 +136,25 @@ const TripDays: React.FC<TripDaysProps> = ({ trip, tripStartDate, onAddEvent }) 
                                     let description = '';
                                     let address = '';
 
-                                    if ('hotel_id' in event) {
+                                    if ('hotel_entry_id' in event) {
                                         eventType = 'Hotel';
                                         IconComponent = getIconComponent(eventType);
                                         title = event.ideal_hotel_name || 'Unknown Hotel';
                                         description = `Check-in: Day ${event.relative_check_in_day}, Check-out: Day ${event.relative_check_out_day}`;
                                         address = event.address || '';
-                                    } else if ('destination_city_code' in event) {
+                                    } else if ('flight_entry_id' in event) {
                                         eventType = 'Flight';
                                         IconComponent = getIconComponent(eventType);
                                         title = `${event.departure_city_code} to ${event.destination_city_code}`;
-                                        description = `Departure: Day ${event.relative_departure_day}`;
-                                    } else {
+                                        description = `Departure: Day ${event.relative_departure_day}, Class: ${event.travel_class}`;
+                                    } else if ('activity_entry_id' in event) {
                                         eventType = 'Activity';
                                         IconComponent = getIconComponent(eventType);
-                                        title = (event as Activity).name;
-                                        description = (event as Activity).description || '';
-                                        address = (event as Activity).address || '';
+                                        title = event.name;
+                                        description = event.description || '';
+                                        address = event.address || '';
+                                    } else {
+                                        return null; // Skip rendering if the event type is unknown
                                     }
 
                                     return (
@@ -167,12 +168,21 @@ const TripDays: React.FC<TripDaysProps> = ({ trip, tripStartDate, onAddEvent }) 
                                                 <h3 className="font-semibold">{title}</h3>
                                             </div>
                                             <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{description}</p>
-                                            {address && <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{address}</p>}
+                                            {address && (
+                                                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{address}</p>
+                                            )}
+                                            {'price_usd' in event && (
+                                                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    Price: ${event.price_usd.toFixed(2)} USD
+                                                </p>
+                                            )}
                                         </div>
                                     );
                                 })}
                                 {/* No Events */}
-                                {dayEvents.length === 0 && <p className={`text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>No events</p>}
+                                {dayEvents.length === 0 && (
+                                    <p className={`text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>No events</p>
+                                )}
 
                                 {/* Day Footer with Dropdown */}
                                 <div className="absolute top-2 right-2 flex items-center">
