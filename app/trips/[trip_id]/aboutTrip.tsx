@@ -1,8 +1,23 @@
 // app/trips/[trip_id]/aboutTrip.tsx
 'use client';
 
-import { Card, CardHeader, CardBody, Skeleton, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from '@nextui-org/react';
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    Skeleton,
+    Dropdown,
+    DropdownTrigger,
+    DropdownMenu,
+    DropdownItem,
+    Button,
+    Calendar,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+} from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
+import { parseDate, today, getLocalTimeZone } from '@internationalized/date';
 
 import { useTrip } from '@/hooks/useTrip';
 import { MoreIcon } from '@/components/icons';
@@ -10,9 +25,11 @@ import { MoreIcon } from '@/components/icons';
 interface AboutTripProps {
     trip_id: string;
     handleOpenEditTripModal: () => void;
+    tripStartDate: Date;
+    setTripStartDate: (date: Date) => void;
 }
 
-export default function AboutTrip({ trip_id, handleOpenEditTripModal }: AboutTripProps) {
+export default function AboutTrip({ trip_id, handleOpenEditTripModal, tripStartDate, setTripStartDate }: AboutTripProps) {
     const router = useRouter();
     const { trip, isLoading, isError, error, deleteTrip } = useTrip(trip_id);
 
@@ -27,7 +44,7 @@ export default function AboutTrip({ trip_id, handleOpenEditTripModal }: AboutTri
 
     if (isLoading || !trip) {
         return (
-            <Card className="w-full h-20">
+            <Card className="w-full h-28">
                 <CardHeader className="flex justify-between items-center">
                     <Skeleton className="w-3/5 rounded-lg">
                         <div className="h-8 rounded-lg bg-default-200" />
@@ -51,9 +68,32 @@ export default function AboutTrip({ trip_id, handleOpenEditTripModal }: AboutTri
     }
 
     return (
-        <Card className="w-full h-20">
-            <CardHeader className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">{trip?.trip_name}</h2>
+        <Card className="w-full h-24">
+            <CardHeader className="flex h-full justify-between items-center p-4">
+                <h2 className="text-xl font-bold justify-center">{trip?.trip_name}</h2>
+
+                <Popover backdrop="opaque" placement="bottom">
+                    <PopoverTrigger>
+                        <Button className="" variant="light">
+                            Starts on {tripStartDate.toLocaleDateString()}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="bg-transparent shadow-none border-none">
+                        <Calendar
+                            aria-label="Trip start date"
+                            minValue={today(getLocalTimeZone())}
+                            value={parseDate(tripStartDate.toISOString().split('T')[0])}
+                            onChange={date => {
+                                const isoDate = date.toString();
+                                const selectedDate = new Date(isoDate);
+                                const adjustedDate = new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000);
+
+                                setTripStartDate(adjustedDate);
+                            }}
+                        />
+                    </PopoverContent>
+                </Popover>
+
                 <Dropdown>
                     <DropdownTrigger>
                         <Button isIconOnly variant="light">
@@ -61,19 +101,15 @@ export default function AboutTrip({ trip_id, handleOpenEditTripModal }: AboutTri
                         </Button>
                     </DropdownTrigger>
                     <DropdownMenu aria-label="Trip actions">
-                        <DropdownItem key="delete" className="text-danger" color="danger" onClick={handleDeleteTrip}>
-                            Delete Trip
-                        </DropdownItem>
                         <DropdownItem key="edit" onClick={handleOpenEditTripModal}>
                             Edit Trip
+                        </DropdownItem>
+                        <DropdownItem key="delete" className="text-danger" color="danger" onClick={handleDeleteTrip}>
+                            Delete Trip
                         </DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
             </CardHeader>
-            <CardBody>
-                <p>Duration: {trip?.length_in_days} days</p>
-                {trip?.description && <p className="mt-2">{trip.description}</p>}
-            </CardBody>
         </Card>
     );
 }

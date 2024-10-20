@@ -10,9 +10,9 @@ import FlightModal from './flightModal';
 import HotelModal from './hotelModal';
 import ActivityModal from './activityModal';
 import TripDays from './tripDays';
+import EditTripModal from './editTripModal';
 
 import { useTrip } from '@/hooks/useTrip';
-import EditTripModal from './editTripModal';
 
 export default function ItineraryPage({ params }: { params: Params }) {
     const { trip_id } = params;
@@ -54,12 +54,23 @@ export default function ItineraryPage({ params }: { params: Params }) {
 
             {/* Floating left panel */}
             <div className="absolute flex gap-4 flex-col top-0 left-0 w-1/3 h-full p-4 overflow-auto">
-                <AboutTrip handleOpenEditTripModal={handleOpenEditTripModal} trip_id={trip_id} />
+
+                {/* About Trip */}
+                <AboutTrip
+                    handleOpenEditTripModal={handleOpenEditTripModal}
+                    setTripStartDate={setTripStartDate}
+                    tripStartDate={tripStartDate}
+                    trip_id={trip_id}
+                />
+
+                {/* Trip Days */}
                 {trip && <TripDays trip={trip} tripStartDate={tripStartDate} onAddEvent={handleAddEvent} />}
+
+                {/* Chatbot */}
                 <TripChatbot />
             </div>
 
-            {/* Modals */}
+            {/* Flight Modal */}
             <FlightModal
                 isOpen={isFlightModalOpen}
                 newEventDate={newEventDate}
@@ -68,6 +79,7 @@ export default function ItineraryPage({ params }: { params: Params }) {
                 onClose={() => setIsFlightModalOpen(false)}
             />
 
+            {/* Hotel Modal */}
             <HotelModal
                 isOpen={isHotelModalOpen}
                 newEventDate={newEventDate}
@@ -76,6 +88,7 @@ export default function ItineraryPage({ params }: { params: Params }) {
                 onClose={() => setIsHotelModalOpen(false)}
             />
 
+            {/* Activity Modal */}
             <ActivityModal
                 isOpen={isActivityModalOpen}
                 newEventDate={newEventDate}
@@ -84,10 +97,13 @@ export default function ItineraryPage({ params }: { params: Params }) {
                 onClose={() => setIsActivityModalOpen(false)}
             />
 
+            {/* Edit Trip Modal */}
             <EditTripModal
                 isOpen={isEditTripModalOpen}
-                onClose={() => setIsEditTripModalOpen(false)}
+                setTripStartDate={setTripStartDate}
+                tripStartDate={tripStartDate}
                 trip_id={trip_id}
+                onClose={() => setIsEditTripModalOpen(false)}
             />
         </div>
     );

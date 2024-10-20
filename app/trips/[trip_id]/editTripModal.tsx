@@ -1,7 +1,20 @@
 // app/trips/[trip_id]/activityModal.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, Button } from '@nextui-org/react';
+import {
+    Modal,
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    Input,
+    Button,
+    Calendar,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+} from '@nextui-org/react';
+import { parseDate, today, getLocalTimeZone } from '@internationalized/date';
 
 import { useTrip } from '@/hooks/useTrip';
 
@@ -9,9 +22,11 @@ interface EditTripModalProps {
     isOpen: boolean;
     onClose: () => void;
     trip_id: string;
+    tripStartDate: Date;
+    setTripStartDate: (date: Date) => void;
 }
 
-const EditTripModal: React.FC<EditTripModalProps> = ({ isOpen, onClose, trip_id }) => {
+const EditTripModal: React.FC<EditTripModalProps> = ({ isOpen, onClose, trip_id, tripStartDate, setTripStartDate }) => {
     const { trip, updateTrip } = useTrip(trip_id);
     const [name, setName] = useState(trip?.trip_name || '');
     const [tripLength, setTripLength] = useState(trip?.length_in_days?.toString() || '');
@@ -54,6 +69,25 @@ const EditTripModal: React.FC<EditTripModalProps> = ({ isOpen, onClose, trip_id 
                         onChange={e => setTripLength(e.target.value)}
                     />
                     <Input label="Photo URL" placeholder="Enter photo URL" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} />
+                    <Popover placement="bottom">
+                        <PopoverTrigger>
+                            <Button variant="bordered">Start Date: {tripStartDate.toLocaleDateString()}</Button>
+                        </PopoverTrigger>
+                        <PopoverContent>
+                            <Calendar
+                                aria-label="Trip start date"
+                                minValue={today(getLocalTimeZone())}
+                                value={parseDate(tripStartDate.toISOString().split('T')[0])}
+                                onChange={date => {
+                                    const isoDate = date.toString();
+                                    const selectedDate = new Date(isoDate);
+                                    const adjustedDate = new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000);
+
+                                    setTripStartDate(adjustedDate);
+                                }}
+                            />
+                        </PopoverContent>
+                    </Popover>
                 </ModalBody>
                 <ModalFooter>
                     <Button variant="light" onPress={onClose}>
