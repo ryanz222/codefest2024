@@ -70,7 +70,7 @@ export interface Activity {
     creator_id: string;
 
     // Information needed to get prices from amadeus activity offer API
-    id: string;
+    id?: string;
     name: string;
     relative_day: number;
 
