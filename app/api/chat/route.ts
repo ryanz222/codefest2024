@@ -10,7 +10,11 @@ export async function POST(req: NextRequest) {
 
         // Call Gemini 1.5 Flash
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const prompt = `Given the user message: "${message}", generate an itinerary with hotel search parameters for each day of the trip. Return the result as a JSON array of objects, where each object represents a day's hotel search parameters and follows this structure. DO NOT INCLUDE ANY OTHER TEXT IN YOUR RESPONSE:
+        const prompt = `
+        Given the user message: "${message}", generate an itinerary with hotel search parameters for each day of the trip, or modification to the existing itinerary if the message specifies so.
+        Return the result as a JSON array of objects, where each object represents a day's hotel search parameters and follows this structure.
+        Any day specified in the message will override the existing hotel for that day/those days.
+        DO NOT INCLUDE ANY OTHER TEXT IN YOUR RESPONSE:
     {
       "relative_days": number[], (desc:array of relative days to the trip start date I am at this hotel, so if I am at this hotel for 2 days starting on day 2, it would be [2, 3])
       "adults": number,
