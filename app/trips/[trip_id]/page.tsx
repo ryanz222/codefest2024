@@ -2,9 +2,10 @@
 import { Params } from 'next/dist/shared/lib/router/utils/route-matcher';
 
 import MapComponent from './map';
-import AboutTrip from './aboutTrip';
+import TripTimeline from './timeline';
+import TripChatbot from './chatbot';
 
-export default function Trip({ params }: { params: Params }) {
+export default function ItineraryPage({ params }: { params: Params }) {
     const { trip_id } = params;
 
     return (
@@ -13,9 +14,13 @@ export default function Trip({ params }: { params: Params }) {
             <MapComponent trip_id={trip_id} />
 
             {/* Floating left panel */}
-            <div className="absolute flex gap-4 top-0 left-0 w-1/3 h-full p-4 overflow-auto">
-                {/* About Trip */}
-                <AboutTrip trip_id={trip_id} />
+            <div className="absolute flex gap-4 flex-col top-0 left-0 w-1/3 h-full p-4 overflow-auto">
+
+                {/* Trip Timeline */}
+                <TripTimeline trip_id={trip_id} />
+
+                {/* Trip Chatbot */}
+                <TripChatbot />
             </div>
         </div>
     );
