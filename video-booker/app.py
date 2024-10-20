@@ -1,27 +1,49 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, request, jsonify
 import os
 import requests
 import subprocess
 import speech_recognition as sr
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
 import time
 
 app = Flask(__name__)
 
-# Processing logic (same as before but placed inside a function for reusability)
+# Add a root route
+@app.route('/')
+def home():
+    return "Instagram Reel Processing API is running!"
+
+# Processing logic
 def process_reel(reel_url):
-    # Step 1: Set up Selenium and download reel audio and caption
-    driver = webdriver.Safari()
+    # Configure headless Chrome
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    
+    # Determine the environment (local or production)
+    if os.environ.get('IS_DOCKER'):
+        # Use ChromeDriver path from Docker
+        service = Service(executable_path="/usr/local/bin/chromedriver")
+    else:
+        # Use the local ChromeDriver path
+        service = Service(executable_path="/opt/homebrew/bin/chromedriver")  # Local path
+
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
+    # Open the Instagram downloader page
     driver.get("https://toolzin.com/tools/instagram-downloader/")
     time.sleep(3)
 
     input_field = driver.find_element(By.NAME, "search")
     input_field.send_keys(reel_url)
 
-    download_button = WebDriverWait(driver, 10).until(
+    download_button = WebDriverWait(driver, 1).until(
         EC.element_to_be_clickable((By.ID, "btn_submit"))
     )
 
@@ -35,7 +57,7 @@ def process_reel(reel_url):
     # Step 4: Download audio file
     audio_file_path = "reel_audio.mp3"
     try:
-        audio_download_button = WebDriverWait(driver, 10).until(
+        audio_download_button = WebDriverWait(driver, 1).until(
             EC.presence_of_element_located((By.XPATH, '//a[contains(text(), "Download Audio")]'))
         )
         audio_link = audio_download_button.get_attribute('href')
@@ -84,28 +106,15 @@ def process_reel(reel_url):
 
     return caption_text, transcription
 
-# Flask route for home page
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-# Flask route to handle form submission and process the reel
-@app.route('/process', methods=['POST'])
+# Flask route to handle API request and process the reel
+@app.route('/api/process', methods=['POST'])
 def process():
-    reel_url = request.form.get('reel_url')
+    reel_url = request.json.get('reel_url')
     if not reel_url:
         return jsonify({'error': 'No URL provided'}), 400
 
     # Process the reel (download, caption extraction, transcription)
     caption, transcription = process_reel(reel_url)
-
-    # Save the caption and transcription to a file
-    result_file = "reel_caption_and_transcription.txt"
-    with open(result_file, "w") as file:
-        file.write("### Caption from Reel ###\n")
-        file.write(caption + "\n\n")
-        file.write("### Transcription from Reel ###\n")
-        file.write(transcription)
 
     # Return JSON response
     return jsonify({
@@ -113,10 +122,6 @@ def process():
         'transcription': transcription
     })
 
-# Flask route to download the results file
-@app.route('/download', methods=['GET'])
-def download():
-    return send_file("reel_caption_and_transcription.txt", as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5001)
