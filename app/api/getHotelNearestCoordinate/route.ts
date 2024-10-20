@@ -3,7 +3,7 @@ import Amadeus from 'amadeus-ts';
 
 const amadeus = new Amadeus({
     clientId: process.env.AMADEUS_API_KEY,
-    clientSecret: process.env.AMADEUS_API_SECRET
+    clientSecret: process.env.AMADEUS_API_SECRET,
 });
 
 export async function GET(request: Request) {
@@ -29,6 +29,7 @@ export async function GET(request: Request) {
         return NextResponse.json(response.data);
     } catch (error) {
         console.error('Amadeus API error:', error);
+
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

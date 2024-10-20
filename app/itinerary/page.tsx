@@ -14,6 +14,7 @@ export interface Event {
         address: string;
         coordinates: [number, number]; // [longitude, latitude]
     };
+    price?: number;
     title: string;
     description: string;
 }
