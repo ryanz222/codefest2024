@@ -3,17 +3,6 @@ import { SVGProps } from 'react';
 
 import { IconSvgProps } from '@/types';
 
-export const Logo: React.FC<IconSvgProps> = ({ size = 36, width, height, ...props }) => (
-    <svg fill="none" height={size || height} viewBox="0 0 32 32" width={size || width} {...props}>
-        <path
-            clipRule="evenodd"
-            d="M17.6482 10.1305L15.8785 7.02583L7.02979 22.5499H10.5278L17.6482 10.1305ZM19.8798 14.0457L18.11 17.1983L19.394 19.4511H16.8453L15.1056 22.5499H24.7272L19.8798 14.0457Z"
-            fill="currentColor"
-            fillRule="evenodd"
-        />
-    </svg>
-);
-
 export const GithubIcon: React.FC<IconSvgProps> = ({ size = 24, width, height, ...props }) => {
     return (
         <svg height={size || height} viewBox="0 0 24 24" width={size || width} {...props}>
@@ -137,5 +126,30 @@ export const MoreIcon = (props: SVGProps<SVGSVGElement>) => (
 export const DarkModeMoreIcon = (props: SVGProps<SVGSVGElement>) => (
     <svg fill="#F3F3F3" height={24} viewBox="0 -960 960 960" width={24} xmlns="http://www.w3.org/2000/svg" {...props}>
         <path d="M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z" />
+    </svg>
+);
+
+export const Logo = ({ size = 24, ...props }: SVGProps<SVGSVGElement> & { size?: number }) => (
+    <svg
+        className="svg-icon"
+        style={{
+            width: `${size}px`,
+            height: `${size}px`,
+            verticalAlign: 'middle',
+            fill: 'currentColor',
+            overflow: 'hidden',
+        }}
+        viewBox="0 0 1024 1024"
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path
+            d="M717.62 477.491c-37.735 0-74.753-10.137-107.06-29.337-14.592-8.653-19.405-27.546-10.7-42.087 8.652-14.592 27.545-19.405 42.086-10.7 22.784 13.567 48.947 20.684 75.673 20.684 81.818 0 148.378-66.56 148.378-148.377s-66.56-148.378-148.378-148.378c-76.544 0-141.517 59.7-147.865 135.885a30.746 30.746 0 0 1-33.178 28.057c-16.896-1.433-29.491-16.281-28.058-33.177C517.53 142.285 609.331 57.856 717.62 57.856c115.712 0 209.818 94.106 209.818 209.818.051 115.712-94.106 209.817-209.818 209.817z"
+            fill="#F8B62D"
+        />
+        <path
+            d="M726.784 313.651c11.827-15.513 13.824-35.993 5.171-53.453a50.596 50.596 0 0 0-45.619-28.313H152.218c-19.508 0-36.967 10.854-45.62 28.313a50.575 50.575 0 0 0 5.172 53.453l276.787 362.957V901.99h-173.21c-16.947 0-30.72 13.773-30.72 30.72s13.773 30.72 30.72 30.72h405.914c16.947 0 30.72-13.772 30.72-30.72s-13.773-30.72-30.72-30.72H449.997V676.608l276.787-362.957zm-61.747-20.377L419.226 615.578l-245.76-322.304h491.57z"
+            fill="#424242"
+        />
     </svg>
 );
