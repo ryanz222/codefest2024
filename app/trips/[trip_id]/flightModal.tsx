@@ -36,7 +36,6 @@ const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, newEventDate
         departure_city_code: '',
         relative_departure_day: 0,
         relative_return_day: 0,
-        adults: 1,
         travel_class: 'ECONOMY',
         non_stop: false,
         currency: 'USD',
@@ -211,12 +210,6 @@ const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, newEventDate
                                 </AutocompleteItem>
                             ))}
                         </Autocomplete>
-                        <Input
-                            label="Number of Adults"
-                            type="number"
-                            value={flightData.adults.toString()}
-                            onChange={e => setFlightData({ ...flightData, adults: parseInt(e.target.value) })}
-                        />
                         <Select
                             label="Travel Class"
                             selectedKeys={[flightData.travel_class]}
