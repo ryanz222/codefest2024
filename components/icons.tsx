@@ -129,7 +129,7 @@ export const DarkModeMoreIcon = (props: SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-export const Logo = ({ size = 24, ...props }: SVGProps<SVGSVGElement> & { size?: number }) => (
+export const Logo = ({ size = 24, isDarkMode = false, ...props }: SVGProps<SVGSVGElement> & { size?: number; isDarkMode?: boolean }) => (
     <svg
         className="svg-icon"
         style={{
@@ -149,7 +149,7 @@ export const Logo = ({ size = 24, ...props }: SVGProps<SVGSVGElement> & { size?:
         />
         <path
             d="M726.784 313.651c11.827-15.513 13.824-35.993 5.171-53.453a50.596 50.596 0 0 0-45.619-28.313H152.218c-19.508 0-36.967 10.854-45.62 28.313a50.575 50.575 0 0 0 5.172 53.453l276.787 362.957V901.99h-173.21c-16.947 0-30.72 13.773-30.72 30.72s13.773 30.72 30.72 30.72h405.914c16.947 0 30.72-13.772 30.72-30.72s-13.773-30.72-30.72-30.72H449.997V676.608l276.787-362.957zm-61.747-20.377L419.226 615.578l-245.76-322.304h491.57z"
-            fill="#424242"
+            fill={isDarkMode ? '#FFFFFF' : '#424242'}
         />
     </svg>
 );

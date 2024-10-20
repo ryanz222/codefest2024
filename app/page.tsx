@@ -12,7 +12,7 @@ export default function Home() {
     const { theme } = useTheme();
 
     return (
-        <div className="min-h-screen flex flex-col">
+        <div className="flex flex-col">
             <section className="flex-grow flex flex-col items-center justify-center gap-4 py-8 md:py-10 overflow-hidden relative">
                 <div className="absolute inset-0 z-0">
                     <video autoPlay loop muted playsInline className="object-cover w-full h-full">
