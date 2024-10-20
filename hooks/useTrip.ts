@@ -340,6 +340,20 @@ export function useTrip(trip_id: string) {
         },
     });
 
+    // Delete flight data
+    const deleteFlightMutation = useMutation({
+        mutationFn: async (flight_entry_id: number) => {
+            if (!client || !session) throw new Error('Supabase client or session not initialized');
+
+            const { error } = await client.from('flights').delete().eq('flight_entry_id', flight_entry_id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['trip', trip_id] });
+        },
+    });
+
     return {
         trip: tripQuery.data,
         isLoading: tripQuery.isLoading || !client,
@@ -351,5 +365,6 @@ export function useTrip(trip_id: string) {
         updateHotel: updateHotelMutation.mutate,
         createFlight: createFlightMutation.mutateAsync,
         updateFlight: updateFlightMutation.mutate,
+        deleteFlight: deleteFlightMutation.mutate,
     };
 }

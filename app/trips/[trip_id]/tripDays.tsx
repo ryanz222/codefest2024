@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ScrollShadow } from '@nextui-org/react';
 import { useTheme } from 'next-themes';
 
@@ -25,7 +25,7 @@ interface TripDaysProps {
 
 const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
     const { theme } = useTheme();
-    const { trip, isLoading, createHotel } = useTrip(trip_id);
+    const { trip, isLoading, createHotel, createFlight } = useTrip(trip_id);
     const [newEventDate, setNewEventDate] = useState<Date>(tripStartDate);
     const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
     const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
@@ -70,9 +70,13 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
     const fetchHotelOffers = async (hotelId: string, checkInDate: string, checkOutDate: string) => {
         try {
             console.log('Fetching hotel offers for hotelId:', hotelId);
-            const response = await fetch(`/api/hotel-api/getOfferFromHotelId?hotelIds=${hotelId}&adults=1&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`);
+            const response = await fetch(
+                `/api/hotel-api/getOfferFromHotelId?hotelIds=${hotelId}&adults=1&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`
+            );
+
             if (!response.ok) throw new Error('Failed to fetch hotel offer');
             const data = await response.json();
+
             setHotelOffers(prev => ({ ...prev, [hotelId]: data[0] }));
         } catch (error) {
             console.error('Error fetching hotel offer:', error);
@@ -95,19 +99,22 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
             description = `Check-in: Day ${event.relative_check_in_day}, Check-out: Day ${event.relative_check_out_day}`;
             address = event.address;
 
-            // Fetch hotel offer if not already fetched
-            const hotelId = event.amadeus_hotel_id;
-            if (hotelId && !hotelOffers[hotelId]) {
-                const checkInDate = new Date(tripStartDate);
-                checkInDate.setDate(checkInDate.getDate() + event.relative_check_in_day);
-                const checkOutDate = new Date(tripStartDate);
-                checkOutDate.setDate(checkOutDate.getDate() + event.relative_check_out_day);
+            // // Fetch hotel offer if not already fetched
+            // const hotelId = event.amadeus_hotel_id;
 
-                fetchHotelOffers(hotelId, checkInDate.toISOString().split('T')[0], checkOutDate.toISOString().split('T')[0]);
-            }
+            // if (hotelId && !hotelOffers[hotelId]) {
+            //     const checkInDate = new Date(tripStartDate);
 
-            // Use fetched price if available
-            price = hotelOffers[hotelId]?.offers[0]?.price?.total || undefined;
+            //     checkInDate.setDate(checkInDate.getDate() + event.relative_check_in_day);
+            //     const checkOutDate = new Date(tripStartDate);
+
+            //     checkOutDate.setDate(checkOutDate.getDate() + event.relative_check_out_day);
+
+            //     fetchHotelOffers(hotelId, checkInDate.toISOString().split('T')[0], checkOutDate.toISOString().split('T')[0]);
+            // }
+
+            // // Use fetched price if available
+            // price = hotelOffers[hotelId]?.offers[0]?.price?.total || undefined;
 
             onClick = () => {
                 setHotelEntryID(event.hotel_entry_id || null);
@@ -213,9 +220,6 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                                         </Button>
                                     </DropdownTrigger>
                                     <DropdownMenu aria-label="Add event options">
-                                        <DropdownItem key="flight" onPress={() => handleAddEvent('Flight', currentDate)}>
-                                            Flight
-                                        </DropdownItem>
                                         <DropdownItem
                                             key="hotel"
                                             onPress={async () => {
@@ -231,6 +235,30 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                                             }}
                                         >
                                             Hotel
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="flight"
+                                            onPress={async () => {
+                                                const newFlight: Omit<Flight, 'flight_entry_id' | 'creator_id'> = {
+                                                    trip_id: trip_id,
+                                                    relative_departure_day: relativeDay,
+                                                    destination_city_code: '',
+                                                    departure_city_code: '',
+                                                    relative_return_day: 0,
+                                                    travel_class: 'ECONOMY',
+                                                    non_stop: false,
+                                                    currency: 'USD',
+                                                    max_price: 0,
+                                                    included_airline_codes: [],
+                                                    excluded_airline_codes: [],
+                                                };
+                                                const newFlightEntryID = await createFlight(newFlight);
+
+                                                setFlightEntryID(newFlightEntryID);
+                                                setIsFlightModalOpen(true);
+                                            }}
+                                        >
+                                            Flight
                                         </DropdownItem>
                                         <DropdownItem key="activity" onPress={() => handleAddEvent('Activity', currentDate)}>
                                             Activity

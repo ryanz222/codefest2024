@@ -31,7 +31,7 @@ interface FlightModalProps {
 }
 
 const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, trip_id, tripStartDate, flight_entry_id }) => {
-    const { trip, updateFlight } = useTrip(trip_id);
+    const { trip, updateFlight, deleteFlight } = useTrip(trip_id);
     const [flightData, setFlightData] = useState<Flight | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -294,9 +294,18 @@ const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, trip_id, tri
                     {error && <p className="text-red-500">{error}</p>}
                 </ModalBody>
                 <ModalFooter>
-                    <Button color="danger" variant="light" onPress={onClose}>
-                        Cancel
-                    </Button>
+                    {!!flightData.flight_entry_id && (
+                        <Button
+                            color="danger"
+                            variant="light"
+                            onPress={() => {
+                                deleteFlight(flightData.flight_entry_id!);
+                                onClose();
+                            }}
+                        >
+                            Delete Flight
+                        </Button>
+                    )}
                     <Button color="primary" disabled={isLoading} onPress={handleUpdateFlight}>
                         {isLoading ? <Spinner size="sm" /> : 'Update Flight'}
                     </Button>
