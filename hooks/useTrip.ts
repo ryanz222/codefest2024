@@ -72,11 +72,13 @@ export interface Activity {
     // Information needed to get prices from amadeus activity offer API
     id: string;
     name: string;
-    photo_url: string;
-    address: string;
-    description: string;
-
     relative_day: number;
+
+    // Optional specific activity data
+    photo_url?: string;
+    address?: string;
+    description?: string;
+
 }
 
 export interface Flight {

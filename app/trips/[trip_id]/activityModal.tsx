@@ -8,11 +8,12 @@ import { Activity, useTrip } from '@/hooks/useTrip';
 interface ActivityModalProps {
     isOpen: boolean;
     onClose: () => void;
-    date: Date | null;
+    newEventDate: Date | null;
     trip_id: string;
+    tripStartDate: Date;
 }
 
-const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, date, trip_id }) => {
+const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, newEventDate: date, trip_id, tripStartDate }) => {
     const { trip, updateTrip } = useTrip(trip_id);
     const [activityName, setActivityName] = useState('');
     const [activityDescription, setActivityDescription] = useState('');
@@ -21,24 +22,23 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, date, tr
     const handleAddActivity = async () => {
         if (!trip || !date) return;
 
-        const relativeDay = Math.floor((date.getTime() - trip.start_date.getTime()) / (1000 * 60 * 60 * 24));
+        // const relativeDay = Math.floor((date.getTime() - tripStartDate.getTime()) / (1000 * 60 * 60 * 24));
 
-        const newActivity: Activity = {
-            trip_id: trip.trip_id,
-            creator_id: trip.creator_id,
-            relative_day: relativeDay,
-            name: activityName,
-            description: activityDescription,
-            address: activityAddress,
-            // Add other activity details here
-        };
+        // const newActivity: Omit<Activity, 'id'> = {
+        //     trip_id: trip.trip_id,
+        //     creator_id: trip.creator_id,
+        //     relative_day: relativeDay,
+        //     name: activityName,
+        //     description: activityDescription,
+        //     address: activityAddress,
+        // };
 
-        const updatedTrip = {
-            ...trip,
-            activities: [...trip.activities, newActivity],
-        };
+        // const updatedTrip = {
+        //     ...trip,
+        //     activities: [...trip.activities, newActivity],
+        // };
 
-        await updateTrip(updatedTrip);
+        // await updateTrip(updatedTrip);
         onClose();
     };
 
