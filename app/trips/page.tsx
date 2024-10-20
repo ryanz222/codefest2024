@@ -1,18 +1,17 @@
 // app/trips/page.tsx
-"use client";
-import { useState } from "react";
+'use client';
+import { useState } from 'react';
 
-import { useTrips } from "@/hooks/useTrips";
+import { useTrips } from '@/hooks/useTrips';
 
 export default function Trips() {
-    const [name, setName] = useState("");
-    const { trips, isLoading, isError, error, addTrip, deleteTrip } =
-        useTrips();
+    const [name, setName] = useState('');
+    const { trips, isLoading, isError, error, addTrip, deleteTrip } = useTrips();
 
     const handleCreateTrip = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         addTrip(name);
-        setName("");
+        setName('');
     };
 
     if (isLoading) return <p>Loading...</p>;
@@ -23,19 +22,17 @@ export default function Trips() {
             <h1>Trips</h1>
 
             {trips.length > 0 ? (
-                trips.map((trip) => (
+                trips.map(trip => (
                     <div
-                        key={trip.id}
+                        key={trip.tripId}
                         style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
                         }}
                     >
-                        <p>{trip.name}</p>
-                        <button onClick={() => deleteTrip(trip.id)}>
-                            Delete
-                        </button>
+                        <p>{trip.tripName}</p>
+                        <button onClick={() => deleteTrip(trip.tripId)}>Delete</button>
                     </div>
                 ))
             ) : (
@@ -43,13 +40,7 @@ export default function Trips() {
             )}
 
             <form onSubmit={handleCreateTrip}>
-                <input
-                    name="name"
-                    placeholder="Enter new trip name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                />
+                <input name="name" placeholder="Enter new trip name" type="text" value={name} onChange={e => setName(e.target.value)} />
                 <button type="submit">Add Trip</button>
             </form>
         </div>

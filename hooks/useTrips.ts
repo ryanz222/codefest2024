@@ -6,8 +6,9 @@ import { useSession } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
 
 interface Hotel {
-    // Id to connect hotel to trip
+    // Id to connect hotel to trip and creator
     tripId: string;
+    creatorId: string;
 
     // Information needed to get prices from amadeus hotel offer API
     relativeCheckInDay: number;
@@ -62,15 +63,25 @@ interface Hotel {
 }
 
 interface Activity {
-    id: string; // 8 character string
+    // Id to connect activity to trip and creator
+    tripId: string;
+    creatorId: string;
+
+    // Information needed to get prices from amadeus activity offer API
+    id: string;
     name: string;
-    photo_url: string;
+    photoURL: string;
     address: string;
     description: string;
 }
 
 interface Flight {
-    id: string; // 8 character string
+    // Id to connect flight to trip and creator
+    tripId: string;
+    creatorId: string;
+
+    // Information needed to get prices from amadeus flight offer API
+    id: string;
     destinationCityCode: string;
     departureCityCode: string;
     departureDate: string;
