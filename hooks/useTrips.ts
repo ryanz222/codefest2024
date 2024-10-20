@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { useSession } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
+import { SessionResource } from '@clerk/types';
 
 export interface TripDescription {
     trip_id: string;
@@ -16,8 +17,11 @@ export interface TripDescription {
     description?: string;
 }
 
-interface TripFilters {
+export interface TripFilters {
     creator?: string;
+    min_length?: number;
+    max_length?: number;
+    search_term?: string;
 }
 
 // ----------------------------------------
@@ -58,12 +62,25 @@ const createOrGetSupabaseClient = (supabaseAccessToken: string | null) => {
 // ----------------------------------------
 
 // Function to fetch trips from Supabase
-const fetchTrips = async (client: SupabaseClient, filters?: TripFilters): Promise<TripDescription[]> => {
+const fetchTrips = async (client: SupabaseClient, session: SessionResource, filters?: TripFilters): Promise<TripDescription[]> => {
     let query = client.from('trips').select('*');
 
     // Apply filters if provided
     if (filters?.creator) {
-        query = query.eq('creator_id', filters.creator);
+        const creator = filters.creator === 'CURRENT_USER' ? session?.user?.id : filters.creator;
+
+        query = query.eq('creator_id', creator);
+    }
+    if (filters?.min_length) {
+        query = query.gte('length_in_days', filters.min_length);
+    }
+    if (filters?.max_length) {
+        query = query.lte('length_in_days', filters.max_length);
+    }
+    if (filters?.search_term) {
+        query = query.or(
+            `description.ilike.%${filters.search_term}%,creator_id.ilike.%${filters.search_term}%,trip_name.ilike.%${filters.search_term}%`
+        );
     }
 
     const { data, error } = await query;
@@ -135,11 +152,11 @@ export function useTrips(filters?: TripFilters) {
     const tripsQuery = useQuery<TripDescription[], Error>({
         queryKey: ['trips', filters],
         queryFn: () => {
-            if (!client) throw new Error('Supabase client not initialized');
+            if (!client || !session) throw new Error('Supabase client or session not initialized');
 
-            return fetchTrips(client, filters);
+            return fetchTrips(client, session, filters);
         },
-        enabled: !!client, // Only run the query when the client is initialized
+        enabled: !!client,
     });
 
     const addTripMutation = useMutation({

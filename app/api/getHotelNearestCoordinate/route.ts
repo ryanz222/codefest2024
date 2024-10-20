@@ -24,8 +24,6 @@ export async function GET(request: Request) {
             radiusUnit: 'KM',
         });
 
-        console.log('Response:', response);
-
         return NextResponse.json(response.data);
     } catch (error) {
         console.error('Amadeus API error:', error);
