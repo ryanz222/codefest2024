@@ -94,7 +94,7 @@ interface Flight {
     excluded_airline_codes: string[];
 }
 
-interface Trip {
+export interface Trip {
     trip_id: number;
     creator_id: string;
     trip_name: string;
