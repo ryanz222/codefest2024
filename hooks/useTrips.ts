@@ -26,10 +26,21 @@ interface Activity {
     name: string;
     photo_url: string;
     address: string;
+    description: string;
 }
 
 interface Flight {
     id: string; // 8 character string
+    destinationCityCode: string;
+    departureCityCode: string;
+    departureDate: string;
+    adults: number;
+    travelClass: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
+    nonStop: boolean;
+    currency: string;
+    maxPrice: number;
+    includedAirlineCodes: string[];
+    excludedAirlineCodes: string[];
 }
 
 interface Trip {
