@@ -19,17 +19,16 @@ def home():
     return "Instagram Reel Processing API is running!"
 
 # Processing logic
-# Processing logic
 def process_reel(reel_url):
     # Configure headless Chrome
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
-    
-    # Use ChromeDriver path and binary location from environment variables
-    chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    service = Service(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
+    chrome_options.binary_location = os.getenv('GOOGLE_CHROME_BIN', '/usr/bin/google-chrome')
+
+    # Use ChromeDriver path from environment variables
+    service = Service(os.getenv('CHROMEDRIVER_PATH', '/usr/local/bin/chromedriver'))
 
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
@@ -102,6 +101,7 @@ def process_reel(reel_url):
     os.remove(wav_file_path)
 
     return caption_text, transcription
+
 
 # Flask route to handle API request and process the reel
 @app.route('/api/process', methods=['POST'])
