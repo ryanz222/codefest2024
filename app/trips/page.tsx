@@ -5,13 +5,19 @@ import { useState } from 'react';
 import { useTrips } from '@/hooks/useTrips';
 
 export default function Trips() {
-    const [name, setName] = useState('');
+    const [tripName, setTripName] = useState('');
     const { trips, isLoading, isError, error, addTrip, deleteTrip } = useTrips();
 
     const handleCreateTrip = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        addTrip(name);
-        setName('');
+        if (tripName.trim()) {
+            addTrip({
+                trip_name: tripName.trim(),
+                length_in_days: 1, // Set a default value or add input for this
+                is_published: false, // Set a default value or add input for this
+            });
+            setTripName('');
+        }
     };
 
     if (isLoading) return <p>Loading...</p>;
@@ -24,15 +30,15 @@ export default function Trips() {
             {trips.length > 0 ? (
                 trips.map(trip => (
                     <div
-                        key={trip.tripId}
+                        key={trip.trip_id}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '10px',
                         }}
                     >
-                        <p>{trip.tripName}</p>
-                        <button onClick={() => deleteTrip(trip.tripId)}>Delete</button>
+                        <p>{trip.trip_name}</p>
+                        <button onClick={() => deleteTrip(trip.trip_id)}>Delete</button>
                     </div>
                 ))
             ) : (
@@ -40,7 +46,7 @@ export default function Trips() {
             )}
 
             <form onSubmit={handleCreateTrip}>
-                <input name="name" placeholder="Enter new trip name" type="text" value={name} onChange={e => setName(e.target.value)} />
+                <input name="tripName" placeholder="Enter new trip name" type="text" value={tripName} onChange={e => setTripName(e.target.value)} />
                 <button type="submit">Add Trip</button>
             </form>
         </div>

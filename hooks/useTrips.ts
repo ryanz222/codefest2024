@@ -153,11 +153,16 @@ const createOrGetSupabaseClient = (supabaseAccessToken: string | null) => {
 
 // Function to fetch trips from Supabase
 const fetchTrips = async (client: SupabaseClient, filters?: TripFilters): Promise<Trip[]> => {
-    let query = client.from('trips').select('*');
+    let query = client.from('trips').select(`
+            *,
+            hotels (*),
+            activities (*),
+            flights (*)
+        `);
 
     // Apply filters if provided
     if (filters?.creator) {
-        query = query.eq('user_id', filters.creator);
+        query = query.eq('creator_id', filters.creator);
     }
 
     const { data, error } = await query;
@@ -168,8 +173,15 @@ const fetchTrips = async (client: SupabaseClient, filters?: TripFilters): Promis
 };
 
 // Function to add a trip to Supabase
-const addTrip = async (client: SupabaseClient, name: string): Promise<Trip> => {
-    const { data, error } = await client.from('trips').insert({ name }).select().single();
+const addTrip = async (client: SupabaseClient, trip: Omit<Trip, 'trip_id' | 'created_at' | 'creator_id'>): Promise<Trip> => {
+    const completeTrip = {
+        ...trip,
+        is_published: true, // Default to published
+    };
+
+    console.log('adding trip', completeTrip);
+
+    const { data, error } = await client.from('trips').insert(completeTrip).select().single();
 
     if (error) throw error;
 
@@ -178,7 +190,7 @@ const addTrip = async (client: SupabaseClient, name: string): Promise<Trip> => {
 
 // Function to delete a trip from Supabase
 const deleteTrip = async (client: SupabaseClient, id: number): Promise<void> => {
-    const { error } = await client.from('trips').delete().eq('id', id);
+    const { error } = await client.from('trips').delete().eq('trip_id', id);
 
     if (error) throw error;
 };
@@ -232,10 +244,10 @@ export function useTrips(filters?: TripFilters) {
     });
 
     const addTripMutation = useMutation({
-        mutationFn: (name: string) => {
-            if (!client) throw new Error('Supabase client not initialized');
+        mutationFn: (trip: Omit<Trip, 'trip_id' | 'created_at' | 'creator_id'>) => {
+            if (!client || !session) throw new Error('Supabase client or session not initialized');
 
-            return addTrip(client, name);
+            return addTrip(client, trip);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['trips'] });
