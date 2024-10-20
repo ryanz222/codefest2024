@@ -21,7 +21,7 @@ export default function MapComponent({ trip_id }: MapComponentProps) {
         if (!mapRef.current && mapContainerRef.current) {
             mapRef.current = new mapboxgl.Map({
                 container: mapContainerRef.current,
-                style: 'mapbox://styles/mapbox/streets-v11',
+                style: 'mapbox://styles/mapbox/standard',
                 center: [-74.5, 40],
                 zoom: 9,
             });

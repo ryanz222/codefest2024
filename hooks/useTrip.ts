@@ -187,6 +187,12 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
     return fetchTrip(client, trip_id);
 };
 
+const deleteTrip = async (client: SupabaseClient, trip_id: string): Promise<void> => {
+    const { error } = await client.from('trips').delete().eq('trip_id', trip_id);
+
+    if (error) throw error;
+};
+
 // ----------------------------------------
 // useTrip Hook
 // ----------------------------------------
@@ -246,11 +252,24 @@ export function useTrip(trip_id: string) {
         },
     });
 
+    const deleteTripMutation = useMutation({
+        mutationFn: () => {
+            if (!client || !session) throw new Error('Supabase client or session not initialized');
+
+            return deleteTrip(client, trip_id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['trips'] });
+            queryClient.removeQueries({ queryKey: ['trip', trip_id] });
+        },
+    });
+
     return {
         trip: tripQuery.data,
         isLoading: tripQuery.isLoading || !client,
         isError: tripQuery.isError,
         error: tripQuery.error,
         updateTrip: updateTripMutation.mutate,
+        deleteTrip: deleteTripMutation.mutate,
     };
 }
