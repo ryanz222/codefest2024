@@ -11,6 +11,7 @@ export interface TripDescription {
     creator_id: string;
     trip_name: string;
     length_in_days: number;
+    adults: number;
     created_at: Date;
     is_published: boolean;
     photo_url?: string;

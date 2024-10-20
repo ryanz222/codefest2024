@@ -122,12 +122,11 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, newEventDate: 
                     creator_id: trip.creator_id,
                     relative_check_in_day: relativeCheckInDay,
                     relative_check_out_day: relativeCheckInDay + 1, // Assuming 1-night stay by default
-                    adults: 2, // Default value, can be adjusted
-                    hotel_id: selectedHotel.hotelId,
+                    amadeus_hotel_id: selectedHotel.hotelId,
                     address: hotelAddress,
                     photo_url: '', // Assuming this is available in the Amadeus response
-                    search_latitude: selectedHotel.geoCode.latitude,
-                    search_longitude: selectedHotel.geoCode.longitude,
+                    hotel_latitude: selectedHotel.geoCode.latitude,
+                    hotel_longitude: selectedHotel.geoCode.longitude,
                     search_radius: 5,
                     search_radius_unit: 'KM',
                     allowed_chain_codes: [],

@@ -15,14 +15,15 @@ export interface Hotel {
     // Information needed to get prices from amadeus hotel offer API
     relative_check_in_day: number;
     relative_check_out_day: number;
-    adults: number;
 
     // Optional specific hotel data
-    hotel_id?: string; // If empty, will pull from Amadeus hotel search.  Otherwise, user entered address -> lat+lon -> amadeus hotel search -> hotel_id with nearest distance
+    amadeus_hotel_id?: string; // If empty, will pull from Amadeus hotel search.  Otherwise, user entered address -> lat+lon -> amadeus hotel search -> hotel_id with nearest distance
     address?: string; // Pulled from either the user inputting the address manually, or amadeus hotel search -> lat+lon -> address from Google Place API
     photo_url?: string; // Pulled from Google Place API once we know the address
+    hotel_latitude?: number;
+    hotel_longitude?: number;
 
-    // If no hotel_id is provided, these are used to get the best hotel from amadeus hotel list API
+    // If no amadeus_hotel_id is provided, these are used to get the best hotel from amadeus hotel list API
     search_latitude?: number;
     search_longitude?: number;
     search_radius?: number;
@@ -69,15 +70,17 @@ export interface Activity {
     trip_id: string;
     creator_id: string;
 
-    // Information needed to get prices from amadeus activity offer API
-    id?: string;
+    // Information needed to get prices and locations
     name: string;
     relative_day: number;
+    price_usd: number;
 
     // Optional specific activity data
     photo_url?: string;
     address?: string;
     description?: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 export interface Flight {
@@ -91,7 +94,6 @@ export interface Flight {
     departure_city_code: string;
     relative_departure_day: number;
     relative_return_day: number;
-    adults: number;
     travel_class: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
     non_stop: boolean;
     currency: string;
@@ -185,10 +187,11 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
                 creator_id: h.creator_id,
                 relative_check_in_day: h.relative_check_in_day,
                 relative_check_out_day: h.relative_check_out_day,
-                adults: h.adults,
-                hotel_api_id: h.hotel_id, // Ensure hotel_id is mapped correctly
+                amadeus_hotel_id: h.amadeus_hotel_id,
                 address: h.address,
                 photo_url: h.photo_url,
+                hotel_latitude: h.hotel_latitude,
+                hotel_longitude: h.hotel_longitude,
                 search_latitude: h.search_latitude,
                 search_longitude: h.search_longitude,
                 search_radius: h.search_radius,
@@ -199,7 +202,7 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
                 priority: h.priority,
                 ideal_hotel_name: h.ideal_hotel_name,
             })),
-            { onConflict: 'trip_id,hotel_api_id' }
+            { onConflict: 'trip_id,amadeus_hotel_id' }
         );
 
         if (hotelError) throw hotelError;
@@ -207,45 +210,44 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
 
     // Handle flights
     if (flights && flights.length > 0) {
-        const { error: flightError } = await client.from('flights').upsert(
-            flights.map(f => ({
-                trip_id: f.trip_id,
-                creator_id: f.creator_id,
-                flight_api_id: f.id,
-                destination_city_code: f.destination_city_code,
-                departure_city_code: f.departure_city_code,
-                relative_departure_day: f.relative_departure_day,
-                relative_return_day: f.relative_return_day,
-                adults: f.adults,
-                travel_class: f.travel_class,
-                non_stop: f.non_stop,
-                currency: f.currency,
-                max_price: f.max_price,
-                included_airline_codes: f.included_airline_codes,
-                excluded_airline_codes: f.excluded_airline_codes,
-            })),
-            { onConflict: 'trip_id,flight_api_id' }
-        );
+        // const { error: flightError } = await client.from('flights').upsert(
+        //     flights.map(f => ({
+        //         trip_id: f.trip_id,
+        //         creator_id: f.creator_id,
+        //         flight_api_id: f.id,
+        //         destination_city_code: f.destination_city_code,
+        //         departure_city_code: f.departure_city_code,
+        //         relative_departure_day: f.relative_departure_day,
+        //         relative_return_day: f.relative_return_day,
+        //         travel_class: f.travel_class,
+        //         non_stop: f.non_stop,
+        //         currency: f.currency,
+        //         max_price: f.max_price,
+        //         included_airline_codes: f.included_airline_codes,
+        //         excluded_airline_codes: f.excluded_airline_codes,
+        //     })),
+        //     { onConflict: 'trip_id,flight_api_id' }
+        // );
 
-        if (flightError) throw flightError;
+        // if (flightError) throw flightError;
     }
 
     // Handle activities
     if (activities && activities.length > 0) {
-        const { error: activityError } = await client.from('activities').upsert(
-            activities.map(a => ({
-                trip_id: a.trip_id,
-                creator_id: a.creator_id,
-                activity_api_id: a.id,
-                name: a.name,
-                photo_url: a.photo_url,
-                address: a.address,
-                description: a.description,
-            })),
-            { onConflict: 'trip_id,activity_api_id' }
-        );
+        // const { error: activityError } = await client.from('activities').upsert(
+        //     activities.map(a => ({
+        //         trip_id: a.trip_id,
+        //         creator_id: a.creator_id,
+        //         activity_api_id: a.id,
+        //         name: a.name,
+        //         photo_url: a.photo_url,
+        //         address: a.address,
+        //         description: a.description,
+        //     })),
+        //     { onConflict: 'trip_id,activity_api_id' }
+        // );
 
-        if (activityError) throw activityError;
+        // if (activityError) throw activityError;
     }
 
     return fetchTrip(client, trip_id);
