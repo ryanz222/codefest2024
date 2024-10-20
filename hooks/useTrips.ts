@@ -15,10 +15,9 @@ interface Hotel {
     adults: number;
 
     // Optional specific hotel data
-    hotelId: string; // Pulled from Amadeus hotel list data
-    lastUpdate: string; // Pulled from Amadeus hotel list data
-    address: string; // Pulled from Google Place API
-    photoURL: string; // Pulled from Google Place API
+    hotelId?: string; // If empty, will pull from Amadeus hotel search.  Otherwise, user entered address -> lat+lon -> amadeus hotel search -> hotelId with nearest distance
+    address?: string; // Pulled from either the user inputting the address manually, or amadeus hotel search -> lat+lon -> address from Google Place API
+    photoURL?: string; // Pulled from Google Place API once we know the address
 
     // If no hotelId is provided, these are used to get the best hotel from amadeus hotel list API
     searchLatitude: number;
@@ -58,7 +57,8 @@ interface Hotel {
         | 'WI-FI_IN_ROOM'
         | 'ROOM_SERVICE'
     >;
-    priority: 'PRICE' | 'DISTANCE' | 'RATING';
+    priority: 'PRICE' | 'DISTANCE' | 'RATING' | 'CLOSESTNAME';
+    idealHotelName?: string;
 }
 
 interface Activity {
