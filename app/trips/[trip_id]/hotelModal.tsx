@@ -22,11 +22,12 @@ import { Hotel, useTrip } from '@/hooks/useTrip';
 interface HotelModalProps {
     isOpen: boolean;
     onClose: () => void;
-    date: Date | null;
+    newEventDate: Date;
+    tripStartDate: Date;
     trip_id: string;
 }
 
-const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, date, trip_id }) => {
+const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, newEventDate: exactCheckinDate, tripStartDate, trip_id }) => {
     const { trip, updateTrip } = useTrip(trip_id);
     const [hotelModalTab, setHotelModalTab] = useState<'specific' | 'search'>('specific');
     const [hotelAddress, setHotelAddress] = useState('');
@@ -39,52 +40,110 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, date, trip_id 
     const [error, setError] = useState<string | null>(null);
 
     const handleInputChange = async (value: string) => {
-        // Implement the autocomplete logic
+        if (value.length > 2) {
+            try {
+                const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(value)}`);
+                const data = await response.json();
+
+                if (data.predictions) {
+                    setPredictions(data.predictions);
+                } else {
+                    console.error('Unexpected response format:', data);
+                    setPredictions([]);
+                }
+            } catch (error) {
+                console.error('Error fetching predictions:', error);
+                setPredictions([]);
+            }
+        } else {
+            setPredictions([]);
+        }
     };
 
     const handlePredictionSelect = (predictionId: string) => {
-        // Handle the selection logic
+        const selectedPrediction = predictions.find(p => p.place_id === predictionId);
+
+        if (selectedPrediction) {
+            setHotelAddress(selectedPrediction.description);
+        }
     };
 
     const handleSpecificHotelSubmission = async () => {
-        // Implement the specific hotel submission logic
+        try {
+            console.log('Submitting specific hotel:', hotelAddress);
+            // Step 1: Get latitude and longitude from address
+            const geocodeResponse = await fetch(`/api/addressToCoordinate?address=${encodeURIComponent(hotelAddress)}`);
+            const geocodeData = await geocodeResponse.json();
+
+            if (geocodeData.error) {
+                throw new Error(geocodeData.error);
+            }
+            const { latitude, longitude } = geocodeData;
+
+            // Step 2: Get tomorrow's date for check-in
+            const tomorrow = new Date();
+
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const checkInDate = tomorrow.toISOString().split('T')[0];
+
+            // Step 3: Fetch hotel information from Amadeus
+            const hotelResponse = await fetch(
+                `/api/getHotelNearestCoordinate?latitude=${latitude}&longitude=${longitude}&checkInDate=${checkInDate}`
+            );
+            const hotelData = await hotelResponse.json();
+
+            if (hotelData.error) {
+                throw new Error(hotelData.error);
+            }
+
+            console.log('Hotel data:', hotelData);
+            // Step 4: Process and display hotel information
+            if (hotelData.length > 0) {
+                setHotelOptions(hotelData);
+                setSelectedHotelId(null);
+            } else {
+                throw new Error('No hotel offers found');
+            }
+        } catch (error) {
+            console.error('Error submitting hotel:', error);
+            setError('An error occurred while fetching hotel options. Please try again.');
+        }
     };
 
     const handleHotelSelection = async () => {
-        if (!trip || !date || !selectedHotelId) return;
+        if (selectedHotelId && trip && exactCheckinDate) {
+            const selectedHotel = hotelOptions.find(hotel => hotel.hotelId === selectedHotelId);
 
-        const selectedHotel = hotelOptions.find(hotel => hotel.hotelId === selectedHotelId);
+            console.log('Selected hotel:', selectedHotel);
+            if (selectedHotel && tripStartDate) {
+                const relativeCheckInDay = Math.floor((exactCheckinDate.getTime() - tripStartDate.getTime()) / (1000 * 60 * 60 * 24));
+                const newHotel: Hotel = {
+                    trip_id: trip.trip_id,
+                    creator_id: trip.creator_id,
+                    relative_check_in_day: relativeCheckInDay,
+                    relative_check_out_day: relativeCheckInDay + 1, // Assuming 1-night stay by default
+                    amadeus_hotel_id: selectedHotel.hotelId,
+                    address: hotelAddress,
+                    photo_url: '', // Assuming this is available in the Amadeus response
+                    hotel_latitude: selectedHotel.geoCode.latitude,
+                    hotel_longitude: selectedHotel.geoCode.longitude,
+                    search_radius: 5,
+                    search_radius_unit: 'KM',
+                    allowed_chain_codes: [],
+                    allowed_ratings: [],
+                    required_amenities: [],
+                    priority: hotelFilterPriority,
+                    ideal_hotel_name: selectedHotel.name,
+                };
 
-        if (selectedHotel) {
-            const relativeCheckInDay = Math.floor((date.getTime() - trip.start_date.getTime()) / (1000 * 60 * 60 * 24));
+                const updatedTrip = {
+                    ...trip,
+                    hotels: [...trip.hotels, newHotel],
+                };
 
-            const newHotel: Hotel = {
-                trip_id: trip.trip_id,
-                creator_id: trip.creator_id,
-                relative_check_in_day: relativeCheckInDay,
-                relative_check_out_day: relativeCheckInDay + 1,
-                adults: 2,
-                hotel_id: selectedHotel.hotelId,
-                address: hotelAddress,
-                photo_url: '',
-                search_latitude: selectedHotel.geoCode.latitude,
-                search_longitude: selectedHotel.geoCode.longitude,
-                search_radius: 5,
-                search_radius_unit: 'KM',
-                allowed_chain_codes: [],
-                allowed_ratings: [],
-                required_amenities: [],
-                priority: hotelFilterPriority,
-                ideal_hotel_name: selectedHotel.name,
-            };
-
-            const updatedTrip = {
-                ...trip,
-                hotels: [...trip.hotels, newHotel],
-            };
-
-            await updateTrip(updatedTrip);
-            onClose();
+                await updateTrip(updatedTrip);
+                onClose();
+            }
         }
     };
 
@@ -97,6 +156,7 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, date, trip_id 
                 await handleSpecificHotelSubmission();
             } else {
                 // Implement hotel search submission logic
+                console.log('Submitting hotel search:', { hotelCity, hotelFilterPriority });
             }
         } catch (error) {
             setError('An error occurred while adding the hotel. Please try again.');
@@ -110,7 +170,7 @@ const HotelModal: React.FC<HotelModalProps> = ({ isOpen, onClose, date, trip_id 
             <ModalContent>
                 <ModalHeader>Add New Hotel</ModalHeader>
                 <ModalBody>
-                    <Input readOnly label="Date" value={date?.toDateString() || ''} />
+                    <Input readOnly label="Date" value={exactCheckinDate?.toDateString() || ''} />
 
                     <ButtonGroup>
                         <Button color={hotelModalTab === 'specific' ? 'primary' : 'default'} onPress={() => setHotelModalTab('specific')}>

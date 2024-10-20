@@ -11,6 +11,7 @@ export interface TripDescription {
     creator_id: string;
     trip_name: string;
     length_in_days: number;
+    adults: number;
     created_at: Date;
     is_published: boolean;
     photo_url?: string;
@@ -62,7 +63,7 @@ const createOrGetSupabaseClient = (supabaseAccessToken: string | null) => {
 // ----------------------------------------
 
 // Function to fetch trips from Supabase
-const fetchTrips = async (client: SupabaseClient, session: SessionResource, filters?: TripFilters): Promise<TripDescription[]> => {
+const fetchTrips = async (client: SupabaseClient, session: SessionResource | null, filters?: TripFilters): Promise<TripDescription[]> => {
     let query = client.from('trips').select('*');
 
     // Apply filters if provided
@@ -152,7 +153,7 @@ export function useTrips(filters?: TripFilters) {
     const tripsQuery = useQuery<TripDescription[], Error>({
         queryKey: ['trips', filters],
         queryFn: () => {
-            if (!client || !session) throw new Error('Supabase client or session not initialized');
+            if (!client || !isClerkLoaded) throw new Error('Supabase client not initialized');
 
             return fetchTrips(client, session, filters);
         },
