@@ -6,9 +6,6 @@ import { Params } from 'next/dist/shared/lib/router/utils/route-matcher';
 import MapComponent from './map';
 import TripChatbot from './chatbot';
 import AboutTrip from './aboutTrip';
-import FlightModal from './flightModal';
-import HotelModal from './hotelModal';
-import ActivityModal from './activityModal';
 import TripDays from './tripDays';
 import EditTripModal from './editTripModal';
 
@@ -37,7 +34,6 @@ export default function ItineraryPage({ params }: { params: Params }) {
 
             {/* Floating left panel */}
             <div className="absolute flex gap-4 flex-col top-0 left-0 min-w-[400px] h-full p-4 overflow-auto">
-
                 {/* About Trip */}
                 <AboutTrip
                     handleOpenEditTripModal={() => setIsEditTripModalOpen(true)}
@@ -47,7 +43,7 @@ export default function ItineraryPage({ params }: { params: Params }) {
                 />
 
                 {/* Trip Days */}
-                {trip && <TripDays trip={trip} tripStartDate={tripStartDate} onAddEvent={handleAddEvent} />}
+                {trip && <TripDays tripStartDate={tripStartDate} trip_id={trip_id} />}
 
                 {/* Chatbot */}
                 <TripChatbot />

@@ -276,12 +276,6 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
     return fetchTrip(client, trip_id);
 };
 
-const deleteTrip = async (client: SupabaseClient, trip_id: string): Promise<void> => {
-    const { error } = await client.from('trips').delete().eq('trip_id', trip_id);
-
-    if (error) throw error;
-};
-
 // ----------------------------------------
 // useTrip Hook
 // ----------------------------------------
@@ -320,6 +314,7 @@ export function useTrip(trip_id: string) {
         };
     }, [isClerkLoaded, session]);
 
+    // Query to fetch the trip data
     const tripQuery = useQuery<TripData, Error>({
         queryKey: ['trip', trip_id],
         queryFn: () => {
@@ -330,26 +325,71 @@ export function useTrip(trip_id: string) {
         enabled: !!client,
     });
 
+    // Update trip data
     const updateTripMutation = useMutation({
-        mutationFn: (updatedTrip: Partial<TripData>) => {
+        mutationFn: async (updatedTrip: Partial<TripData>) => {
             if (!client || !session) throw new Error('Supabase client or session not initialized');
 
-            return updateTrip(client, updatedTrip);
+            const { data, error } = await client.from('trips').update(updatedTrip).eq('trip_id', trip_id).select().single();
+
+            if (error) throw error;
+
+            return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['trip', trip_id] });
         },
     });
 
+    // Delete trip data
     const deleteTripMutation = useMutation({
-        mutationFn: () => {
+        mutationFn: async () => {
             if (!client || !session) throw new Error('Supabase client or session not initialized');
 
-            return deleteTrip(client, trip_id);
+            const { error } = await client.from('trips').delete().eq('trip_id', trip_id);
+
+            if (error) throw error;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['trips'] });
             queryClient.removeQueries({ queryKey: ['trip', trip_id] });
+        },
+    });
+
+    // Create hotel data
+    const createHotelMutation = useMutation({
+        mutationFn: async (newHotel: Omit<Hotel, 'hotel_entry_id' | 'creator_id'>): Promise<number> => {
+            if (!client || !session) throw new Error('Supabase client or session not initialized');
+
+            const { data, error } = await client.from('hotels').insert(newHotel).select('hotel_entry_id').single();
+
+            if (error) throw error;
+
+            return data.hotel_entry_id;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['trip', trip_id] });
+        },
+    });
+
+    // Update hotel data
+    const updateHotelMutation = useMutation({
+        mutationFn: async (updatedHotel: Hotel) => {
+            if (!client || !session) throw new Error('Supabase client or session not initialized');
+
+            const { data, error } = await client
+                .from('hotels')
+                .update(updatedHotel)
+                .eq('hotel_entry_id', updatedHotel.hotel_entry_id)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['trip', trip_id] });
         },
     });
 
@@ -360,5 +400,7 @@ export function useTrip(trip_id: string) {
         error: tripQuery.error,
         updateTrip: updateTripMutation.mutate,
         deleteTrip: deleteTripMutation.mutate,
+        createHotel: createHotelMutation.mutateAsync,
+        updateHotel: updateHotelMutation.mutate,
     };
 }
