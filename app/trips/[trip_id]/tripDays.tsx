@@ -25,7 +25,7 @@ interface TripDaysProps {
 
 const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
     const { theme } = useTheme();
-    const { trip, isLoading, createHotel } = useTrip(trip_id);
+    const { trip, isLoading, createHotel, createFlight } = useTrip(trip_id);
     const [newEventDate, setNewEventDate] = useState<Date>(tripStartDate);
     const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
     const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
@@ -78,8 +78,6 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
 
             if (!response.ok) throw new Error('Failed to fetch hotel offer');
             const data = await response.json();
-
-            console.log('Hotel offers:', data);
 
             setHotelOffers(prev => ({ ...prev, [hotelId]: data[0] }));
 
@@ -247,9 +245,6 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                                         </Button>
                                     </DropdownTrigger>
                                     <DropdownMenu aria-label="Add event options">
-                                        <DropdownItem key="flight" onPress={() => handleAddEvent('Flight', currentDate)}>
-                                            Flight
-                                        </DropdownItem>
                                         <DropdownItem
                                             key="hotel"
                                             onPress={async () => {
@@ -266,6 +261,30 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                                         >
                                             Hotel
                                         </DropdownItem>
+                                        <DropdownItem
+                                            key="flight"
+                                            onPress={async () => {
+                                                const newFlight: Omit<Flight, 'flight_entry_id' | 'creator_id'> = {
+                                                    trip_id: trip_id,
+                                                    relative_departure_day: relativeDay,
+                                                    destination_city_code: '',
+                                                    departure_city_code: '',
+                                                    relative_return_day: 0,
+                                                    travel_class: 'ECONOMY',
+                                                    non_stop: false,
+                                                    currency: 'USD',
+                                                    max_price: 0,
+                                                    included_airline_codes: [],
+                                                    excluded_airline_codes: [],
+                                                };
+                                                const newFlightEntryID = await createFlight(newFlight);
+
+                                                setFlightEntryID(newFlightEntryID);
+                                                setIsFlightModalOpen(true);
+                                            }}
+                                        >
+                                            Flight
+                                        </DropdownItem>
                                         <DropdownItem key="activity" onPress={() => handleAddEvent('Activity', currentDate)}>
                                             Activity
                                         </DropdownItem>
@@ -278,13 +297,15 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
             </ScrollShadow>
 
             {/* Modals */}
-            <FlightModal
-                isOpen={isFlightModalOpen}
-                newEventDate={newEventDate}
-                tripStartDate={tripStartDate}
-                trip_id={trip_id}
-                onClose={() => setIsFlightModalOpen(false)}
-            />
+            {flightEntryID && (
+                <FlightModal
+                    flight_entry_id={flightEntryID}
+                    isOpen={isFlightModalOpen}
+                    tripStartDate={tripStartDate}
+                    trip_id={trip_id}
+                    onClose={() => setIsFlightModalOpen(false)}
+                />
+            )}
             {hotelEntryID && (
                 <HotelModal
                     hotel_entry_id={hotelEntryID}
