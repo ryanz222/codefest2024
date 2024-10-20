@@ -1,24 +1,12 @@
-from flask import Flask, request, jsonify
-import os
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+import time
 import requests
 import subprocess
 import speech_recognition as sr
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
-import time
+import os
 
-app = Flask(__name__)
-
-# Add a root route
-@app.route('/')
-def home():
-    return "Instagram Reel Processing API is running!"
-
-# Processing logic
 def process_reel(reel_url):
     # Configure headless Chrome
     chrome_options = Options()
@@ -27,35 +15,25 @@ def process_reel(reel_url):
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.binary_location = os.getenv('GOOGLE_CHROME_BIN', '/usr/bin/google-chrome')
 
-    # Use ChromeDriver path from environment variables
-    service = Service(os.getenv('CHROMEDRIVER_PATH', '/usr/local/bin/chromedriver'))
+    # Automatically download and use the correct ChromeDriver version
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
 
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    
     # Open the Instagram downloader page
     driver.get("https://toolzin.com/tools/instagram-downloader/")
     time.sleep(3)
 
-    input_field = driver.find_element(By.NAME, "search")
+    input_field = driver.find_element_by_name("search")
     input_field.send_keys(reel_url)
 
-    download_button = WebDriverWait(driver, 1).until(
-        EC.element_to_be_clickable((By.ID, "btn_submit"))
-    )
-
-    try:
-        download_button.click()
-    except Exception as e:
-        driver.execute_script("arguments[0].click();", download_button)
+    download_button = driver.find_element_by_id("btn_submit")
+    download_button.click()
 
     time.sleep(5)
 
     # Step 4: Download audio file
     audio_file_path = "reel_audio.mp3"
     try:
-        audio_download_button = WebDriverWait(driver, 1).until(
-            EC.presence_of_element_located((By.XPATH, '//a[contains(text(), "Download Audio")]'))
-        )
+        audio_download_button = driver.find_element_by_xpath('//a[contains(text(), "Download Audio")]')
         audio_link = audio_download_button.get_attribute('href')
         audio_response = requests.get(audio_link)
         with open(audio_file_path, "wb") as file:
@@ -67,7 +45,7 @@ def process_reel(reel_url):
     # Step 5: Scrape the caption
     caption_text = ""
     try:
-        caption_element = driver.find_element(By.ID, 'result')
+        caption_element = driver.find_element_by_id('result')
         caption_text = caption_element.text
     except Exception as e:
         print("Error downloading the caption: ", e)
@@ -101,8 +79,6 @@ def process_reel(reel_url):
     os.remove(wav_file_path)
 
     return caption_text, transcription
-
-
 # Flask route to handle API request and process the reel
 @app.route('/api/process', methods=['POST'])
 def process():
