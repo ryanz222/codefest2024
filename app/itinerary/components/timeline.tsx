@@ -1,7 +1,25 @@
+/* eslint-disable prettier/prettier */
 // app/itinerary/components/timeline.tsx
 'use client';
 import React, { useState, useEffect, useRef, useMemo, Dispatch, SetStateAction } from 'react';
-import { Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, Textarea, ScrollShadow } from '@nextui-org/react';
+import {
+    Button,
+    Modal,
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    Input,
+    ScrollShadow,
+    Dropdown,
+    DropdownTrigger,
+    DropdownMenu,
+    DropdownItem,
+    ButtonGroup,
+    Autocomplete,
+    AutocompleteItem,
+    Spinner,
+} from '@nextui-org/react';
 import { VariableSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTheme } from 'next-themes';
@@ -190,6 +208,67 @@ export default function TripTimeline({ events, setEvents }: TripTimelineProps) {
         return rowHeights.current[index] || DAY_HEIGHT; // Default to DAY_HEIGHT if not set
     };
 
+    const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
+    const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
+    const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+    const [newEventDate, setNewEventDate] = useState<Date | null>(null);
+    const [hotelModalTab, setHotelModalTab] = useState<'specific' | 'search'>('specific');
+    const [hotelAddress, setHotelAddress] = useState('');
+    const [hotelCity, setHotelCity] = useState('');
+    const [hotelFilterPriority, setHotelFilterPriority] = useState<'PRICE' | 'DISTANCE' | 'RATING'>('PRICE');
+    const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+    const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+    const [showPredictions, setShowPredictions] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const onLoad = (autocomplete: google.maps.places.Autocomplete) => {
+        setAutocomplete(autocomplete);
+    };
+
+    const onPlaceChanged = () => {
+        if (autocomplete !== null) {
+            const place = autocomplete.getPlace();
+
+            setHotelAddress(place.formatted_address || '');
+        }
+    };
+
+    const handleInputChange = async (value: string) => {
+        if (value.length > 2) {
+            try {
+                const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(value)}`);
+                const data = await response.json();
+
+                if (data.predictions) {
+                    setPredictions(data.predictions);
+                    setShowPredictions(true);
+                } else {
+                    console.error('Unexpected response format:', data);
+                    setPredictions([]);
+                    setShowPredictions(false);
+                }
+            } catch (error) {
+                console.error('Error fetching predictions:', error);
+                setPredictions([]);
+                setShowPredictions(false);
+            }
+        } else {
+            setPredictions([]);
+            setShowPredictions(false);
+        }
+    };
+
+    const handlePredictionSelect = (predictionId: string) => {
+        const selectedPrediction = predictions.find(p => p.place_id === predictionId);
+
+        if (selectedPrediction) {
+            console.log('Selected prediction:', selectedPrediction);
+
+            setHotelAddress(selectedPrediction.description);
+        }
+    };
+
     const renderDay = ({ index, style }: { index: number; style: React.CSSProperties }) => {
         const date = allDays[index];
         const { weekday, monthDay, year } = formatDate(date);
@@ -256,26 +335,130 @@ export default function TripTimeline({ events, setEvents }: TripTimelineProps) {
                     {/* No Events */}
                     {dayEvents.length === 0 && <p className={`text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>No events</p>}
 
-                    {/* Day Footer */}
+                    {/* Day Footer with Dropdown */}
                     <div className="absolute top-2 right-2 flex items-center">
                         <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-2`}>{year}</span>
-                        <Button
-                            isIconOnly
-                            aria-label="Add event"
-                            className={`${theme === 'dark' ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-white text-black hover:bg-gray-100'
-                                } shadow-sm transition-colors duration-200`}
-                            size="sm"
-                            onClick={() => {
-                                setSelectedDate(date);
-                                setIsModalOpen(true);
-                            }}
-                        >
-                            +
-                        </Button>
+                        <Dropdown>
+                            <DropdownTrigger>
+                                <Button
+                                    isIconOnly
+                                    aria-label="Add event"
+                                    className={`${theme === 'dark' ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-white text-black hover:bg-gray-100'
+                                        } shadow-sm transition-colors duration-200`}
+                                    size="sm"
+                                >
+                                    +
+                                </Button>
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="Add event options">
+                                <DropdownItem
+                                    key="flight"
+                                    onPress={() => {
+                                        setNewEventDate(date);
+                                        setIsFlightModalOpen(true);
+                                    }}
+                                >
+                                    Flight
+                                </DropdownItem>
+                                <DropdownItem
+                                    key="hotel"
+                                    onPress={() => {
+                                        setNewEventDate(date);
+                                        setIsHotelModalOpen(true);
+                                    }}
+                                >
+                                    Hotel
+                                </DropdownItem>
+                                <DropdownItem
+                                    key="activity"
+                                    onPress={() => {
+                                        setNewEventDate(date);
+                                        setIsActivityModalOpen(true);
+                                    }}
+                                >
+                                    Activity
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
                     </div>
                 </div>
             </div>
         );
+    };
+
+    const handleAddHotel = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            if (hotelModalTab === 'specific') {
+                await handleSpecificHotelSubmission(hotelAddress);
+            } else {
+                await handleHotelSearchSubmission(hotelCity, hotelFilterPriority);
+            }
+        } catch (error) {
+            setError('An error occurred while adding the hotel. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSpecificHotelSubmission = async (address: string) => {
+        try {
+            console.log('Submitting specific hotel:', address);
+            // Step 1: Get latitude and longitude from address
+            const geocodeResponse = await fetch(`/api/addressToCoordinate?address=${encodeURIComponent(address)}`);
+            const geocodeData = await geocodeResponse.json();
+
+            if (geocodeData.error) {
+                throw new Error(geocodeData.error);
+            }
+            const { latitude, longitude } = geocodeData;
+
+            // Step 2: Get tomorrow's date for check-in
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const checkInDate = tomorrow.toISOString().split('T')[0];
+
+            // Step 3: Fetch hotel information from Amadeus
+            const hotelResponse = await fetch(`/api/hotels?latitude=${latitude}&longitude=${longitude}&checkInDate=${checkInDate}`);
+            console.log('Hotel response:', hotelResponse);
+            const hotelData = await hotelResponse.json();
+
+            if (hotelData.error) {
+                throw new Error(hotelData.error);
+            }
+
+            // Step 4: Process and display hotel information
+            if (hotelData.length > 0) {
+                const hotel = hotelData[0]; // Get the first hotel offer
+                const newEvent: Event = {
+                    id: Date.now(),
+                    date: newEventDate!,
+                    type: 'Hotel',
+                    location: {
+                        address: hotel.hotel.name,
+                        coordinates: [longitude, latitude],
+                    },
+                    title: hotel.hotel.name,
+                    description: `Price: ${hotel.offers[0].price.total} ${hotel.offers[0].price.currency}`,
+                };
+
+                setEvents(prevEvents => [...prevEvents, newEvent]);
+                setIsHotelModalOpen(false);
+            } else {
+                throw new Error('No hotel offers found');
+            }
+        } catch (error) {
+            console.error('Error submitting hotel:', error);
+            // Handle error (e.g., show error message to user)
+        }
+    };
+
+    const handleHotelSearchSubmission = async (city: string, priority: 'PRICE' | 'DISTANCE' | 'RATING') => {
+        // Skeleton handler for hotel search submission
+        console.log('Submitting hotel search:', { city, priority });
+        // Implement the actual submission logic later
     };
 
     return (
@@ -322,36 +505,125 @@ export default function TripTimeline({ events, setEvents }: TripTimelineProps) {
                 </Button>
             )}
 
-            {/* Add Event Modal */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            {/* Flight Modal */}
+            <Modal isOpen={isFlightModalOpen} onClose={() => setIsFlightModalOpen(false)}>
                 <ModalContent>
-                    <ModalHeader>Add New Event</ModalHeader>
+                    <ModalHeader>Add New Flight</ModalHeader>
                     <ModalBody>
-                        <Input readOnly label="Date" value={selectedDate?.toDateString() || ''} />
-                        <select
-                            className="w-full p-2 border rounded mt-2"
-                            value={newEventType}
-                            onChange={e => setNewEventType(e.target.value as Event['type'])}
-                        >
-                            <option value="Activity">Activity</option>
-                            <option value="Hotel">Hotel</option>
-                            <option value="Flight">Flight</option>
-                        </select>
-                        <Input className="mt-2" label="Title" value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)} />
-                        <Input className="mt-2" label="Location" value={newEventLocation} onChange={e => setNewEventLocation(e.target.value)} />
-                        <Textarea
-                            className="mt-2"
-                            label="Event Description"
-                            value={newEventDescription}
-                            onChange={e => setNewEventDescription(e.target.value)}
-                        />
+                        <Input readOnly label="Date" value={newEventDate?.toDateString() || ''} />
+                        {/* Add more fields here later */}
                     </ModalBody>
                     <ModalFooter>
-                        <Button color="danger" variant="light" onPress={() => setIsModalOpen(false)}>
+                        <Button color="danger" variant="light" onPress={() => setIsFlightModalOpen(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" onPress={handleAddEvent}>
-                            Add Event
+                        <Button
+                            color="primary"
+                            onPress={() => {
+                                // Handle adding flight event
+                                setIsFlightModalOpen(false);
+                            }}
+                        >
+                            Add Flight
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Hotel Modal */}
+            <Modal isOpen={isHotelModalOpen} onClose={() => setIsHotelModalOpen(false)}>
+                <ModalContent>
+                    <ModalHeader>Add New Hotel</ModalHeader>
+                    <ModalBody>
+                        <Input readOnly label="Date" value={newEventDate?.toDateString() || ''} />
+
+                        <ButtonGroup>
+                            <Button color={hotelModalTab === 'specific' ? 'primary' : 'default'} onPress={() => setHotelModalTab('specific')}>
+                                Specific Hotel
+                            </Button>
+                            <Button color={hotelModalTab === 'search' ? 'primary' : 'default'} onPress={() => setHotelModalTab('search')}>
+                                Search Hotels
+                            </Button>
+                        </ButtonGroup>
+
+                        {hotelModalTab === 'specific' ? (
+                            <Autocomplete
+                                defaultItems={predictions}
+                                label="Hotel Address"
+                                placeholder="Enter hotel address"
+                                onInputChange={handleInputChange}
+                                listboxProps={{ emptyContent: <p>Start typing an address...</p> }}
+                                onSelectionChange={(key) => {
+                                    if (typeof key === 'string') {
+                                        handlePredictionSelect(key);
+                                    }
+                                }}
+                            >
+                                {(prediction) => (
+                                    <AutocompleteItem key={prediction.place_id} textValue={prediction.description}>
+                                        {prediction.description}
+                                    </AutocompleteItem>
+                                )}
+                            </Autocomplete>
+                        ) : (
+                            <>
+                                <Input label="City" placeholder="Enter city name" value={hotelCity} onChange={e => setHotelCity(e.target.value)} />
+                                <ButtonGroup>
+                                    <Button
+                                        color={hotelFilterPriority === 'PRICE' ? 'primary' : 'default'}
+                                        onPress={() => setHotelFilterPriority('PRICE')}
+                                    >
+                                        Price
+                                    </Button>
+                                    <Button
+                                        color={hotelFilterPriority === 'DISTANCE' ? 'primary' : 'default'}
+                                        onPress={() => setHotelFilterPriority('DISTANCE')}
+                                    >
+                                        Distance
+                                    </Button>
+                                    <Button
+                                        color={hotelFilterPriority === 'RATING' ? 'primary' : 'default'}
+                                        onPress={() => setHotelFilterPriority('RATING')}
+                                    >
+                                        Rating
+                                    </Button>
+                                </ButtonGroup>
+                            </>
+                        )}
+
+                        {error && <p className="text-red-500">{error}</p>}
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button color="danger" variant="light" onPress={() => setIsHotelModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button color="primary" onPress={handleAddHotel} disabled={isLoading}>
+                            {isLoading ? <Spinner size="sm" /> : 'Add Hotel'}
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Activity Modal */}
+            <Modal isOpen={isActivityModalOpen} onClose={() => setIsActivityModalOpen(false)}>
+                <ModalContent>
+                    <ModalHeader>Add New Activity</ModalHeader>
+                    <ModalBody>
+                        <Input readOnly label="Date" value={newEventDate?.toDateString() || ''} />
+                        {/* Add more fields here later */}
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button color="danger" variant="light" onPress={() => setIsActivityModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            color="primary"
+                            onPress={() => {
+                                // Handle adding activity event
+                                setIsActivityModalOpen(false);
+                            }}
+                        >
+                            Add Activity
                         </Button>
                     </ModalFooter>
                 </ModalContent>
