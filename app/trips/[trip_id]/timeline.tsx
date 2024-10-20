@@ -27,7 +27,13 @@ export default function TripTimeline({ trip_id }: { trip_id: string }) {
 
     const { trip } = useTrip(trip_id);
 
-    const startDate = useMemo(() => trip?.start_date || new Date(), [trip?.start_date]);
+    const startDate = useMemo(() => {
+        const date = new Date();
+
+        date.setMonth(date.getMonth() + 1);
+
+        return date;
+    }, []);
 
     const DAY_HEIGHT = 90;
     const DAYS_TO_LOAD = 3650;
@@ -39,7 +45,26 @@ export default function TripTimeline({ trip_id }: { trip_id: string }) {
     };
 
     const holidays = [
-        // ... your holiday data
+        {
+            date: '2024-01-01',
+            name: "New Year's Day",
+            color: { light: 'bg-red-200', dark: 'bg-red-800' },
+        },
+        {
+            date: '2024-07-04',
+            name: 'Independence Day',
+            color: { light: 'bg-blue-200', dark: 'bg-blue-800' },
+        },
+        {
+            date: '2024-10-31',
+            name: 'Halloween',
+            color: { light: 'bg-purple-200', dark: 'bg-purple-800' },
+        },
+        {
+            date: '2024-12-25',
+            name: 'Christmas Day',
+            color: { light: 'bg-green-200', dark: 'bg-green-800' },
+        },
     ];
 
     const allDays = useMemo(() => {
@@ -122,6 +147,8 @@ export default function TripTimeline({ trip_id }: { trip_id: string }) {
     const renderDay = ({ index, style }: { index: number; style: React.CSSProperties }) => {
         const date = allDays[index];
 
+        if (!trip) return null;
+
         return (
             <DayItem
                 date={date}
@@ -139,8 +166,9 @@ export default function TripTimeline({ trip_id }: { trip_id: string }) {
 
     return (
         <div
-            className={`h-full w-full p-4 overflow-hidden rounded-xl shadow-lg flex flex-col ${theme === 'dark' ? 'bg-gray-800/90 backdrop-blur-md' : 'bg-white/90 backdrop-blur-md'
-                }`}
+            className={`h-full w-full p-4 overflow-hidden rounded-xl shadow-lg flex flex-col ${
+                theme === 'dark' ? 'bg-gray-800/90 backdrop-blur-md' : 'bg-white/90 backdrop-blur-md'
+            }`}
         >
             {/* Title */}
             <h1 className="text-2xl font-bold text-center mb-4">Your Itinerary</h1>
@@ -171,8 +199,9 @@ export default function TripTimeline({ trip_id }: { trip_id: string }) {
                 <Button
                     isIconOnly
                     aria-label="Return to present day"
-                    className={`absolute bottom-4 right-8 ${theme === 'dark' ? 'bg-gray-700 text-blue-300 hover:bg-gray-600' : 'bg-white text-blue-500 hover:bg-gray-100'
-                        } shadow-lg transition-colors duration-200`}
+                    // className={`absolute bottom-4 right-8 ${theme === 'dark' ? 'bg-gray-700 text-blue-300 hover:bg-gray-600' : 'bg-white text-blue-500 hover:bg-gray-100'
+                    //     } shadow-lg transition-colors duration-200`}
+                    className={`absolute bottom-4 right-8`}
                     radius="full"
                     size="lg"
                     onClick={returnToPresent}
