@@ -28,7 +28,6 @@ export async function GET(request: Request) {
             const iataUrl = `http://iatageo.com/getCode/${lat}/${lng}`;
             const iataResponse = await fetch(iataUrl);
             const iataData = await iataResponse.json();
-            console.log('IATA data:', iataData);
 
             if (iataData.code) {
                 return NextResponse.json({ airportCode: iataData.code });
