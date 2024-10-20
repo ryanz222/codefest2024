@@ -6,18 +6,13 @@ import ActivityModal from './activityModal';
 import FlightModal from './flightModal';
 import HotelModal from './hotelModal';
 
-import { Hotel, useTrip } from '@/hooks/useTrip';
+import { Hotel, Flight, Activity, useTrip } from '@/hooks/useTrip';
 import { HotelIcon, PlaneIcon, ActivityIcon, DarkModeHotelIcon, DarkModePlaneIcon, DarkModeActivityIcon } from '@/components/icons';
 
 type EventType = 'Hotel' | 'Flight' | 'Activity';
 
-// Add these new type definitions
-type EventTypeColors = {
-    [key in EventType]: { light: string; dark: string };
-};
-
-// Move eventTypeColors here
-const eventTypeColors: EventTypeColors = {
+// Define color schemes for different event types
+const eventTypeColors: Record<EventType, { light: string; dark: string }> = {
     Hotel: { light: 'bg-red-200', dark: 'bg-red-800' },
     Flight: { light: 'bg-green-200', dark: 'bg-green-800' },
     Activity: { light: 'bg-blue-200', dark: 'bg-blue-800' },
@@ -36,35 +31,16 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
     const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
     const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
     const [hotelEntryID, setHotelEntryID] = useState<number | null>(null);
+    const [flightEntryID, setFlightEntryID] = useState<number | null>(null);
 
+    // Calculate all days of the trip
     const allDays = useMemo(() => {
         if (!trip) return [];
 
         return Array.from({ length: trip.length_in_days }, (_, i) => i);
     }, [trip]);
 
-    // Function to handle adding an event to the trip
-    const handleAddEvent = (eventType: 'Flight' | 'Hotel' | 'Activity', date: Date) => {
-        setNewEventDate(date);
-        if (eventType === 'Flight') {
-            setIsFlightModalOpen(true);
-        } else if (eventType === 'Hotel') {
-            setIsHotelModalOpen(true);
-        } else if (eventType === 'Activity') {
-            setIsActivityModalOpen(true);
-        }
-    };
-
-    function getEventsForDay(relativeDay: number) {
-        if (!trip) return [];
-
-        return [
-            ...trip.hotels.filter(hotel => hotel.relative_check_in_day === relativeDay),
-            ...trip.flights.filter(flight => flight.relative_departure_day === relativeDay),
-            ...trip.activities.filter(activity => activity.relative_day === relativeDay),
-        ];
-    }
-
+    // Function to get the appropriate icon component based on event type and theme
     function getIconComponent(eventType: EventType) {
         switch (eventType) {
             case 'Hotel':
@@ -77,6 +53,85 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                 return null;
         }
     }
+
+    // Function to get all events for a specific day
+    function getEventsForDay(relativeDay: number) {
+        if (!trip) return [];
+
+        return [
+            ...trip.hotels.filter(hotel => hotel.relative_check_in_day === relativeDay),
+            ...trip.flights.filter(flight => flight.relative_departure_day === relativeDay),
+            ...trip.activities.filter(activity => activity.relative_day === relativeDay),
+        ];
+    }
+
+    // Function to render a single event
+    const renderEvent = (event: Hotel | Flight | Activity, relativeDay: number) => {
+        let eventType: EventType;
+        let title: string;
+        let description: string;
+        let address: string | undefined;
+        let price: number | undefined;
+        let onClick: () => void;
+        let uniqueId: string;
+
+        if ('hotel_entry_id' in event) {
+            eventType = 'Hotel';
+            title = event.ideal_hotel_name || 'Unknown Hotel';
+            description = `Check-in: Day ${event.relative_check_in_day}, Check-out: Day ${event.relative_check_out_day}`;
+            address = event.address;
+            price = 200; //event.price_usd;
+            onClick = () => {
+                setHotelEntryID(event.hotel_entry_id || null);
+                setIsHotelModalOpen(true);
+            };
+            uniqueId = `hotel-${event.hotel_entry_id}-day${relativeDay}`;
+        } else if ('flight_entry_id' in event) {
+            eventType = 'Flight';
+            title = `${event.departure_city_code} to ${event.destination_city_code}`;
+            description = `Departure: Day ${event.relative_departure_day}, Class: ${event.travel_class}`;
+            onClick = () => {
+                setFlightEntryID(event.flight_entry_id || null);
+                setIsFlightModalOpen(true);
+            };
+            uniqueId = `flight-${event.flight_entry_id}-day${relativeDay}`;
+        } else {
+            eventType = 'Activity';
+            title = (event as Activity).name;
+            description = (event as Activity).description || '';
+            address = (event as Activity).address;
+            price = (event as Activity).price_usd;
+            onClick = () => setIsActivityModalOpen(true);
+            uniqueId = `activity-${(event as Activity).activity_entry_id}-day${relativeDay}`;
+        }
+
+        const IconComponent = getIconComponent(eventType);
+
+        return (
+            <EventCard
+                key={uniqueId}
+                IconComponent={IconComponent || null}
+                address={address}
+                description={description}
+                eventType={eventType}
+                price={price}
+                title={title}
+                onClick={onClick}
+            />
+        );
+    };
+
+    // Function to handle adding a new event
+    const handleAddEvent = (eventType: EventType, date: Date) => {
+        setNewEventDate(date);
+        if (eventType === 'Flight') {
+            setIsFlightModalOpen(true);
+        } else if (eventType === 'Hotel') {
+            setIsHotelModalOpen(true);
+        } else if (eventType === 'Activity') {
+            setIsActivityModalOpen(true);
+        }
+    };
 
     const bgStyle = theme === 'dark' ? 'bg-gray-800/90 backdrop-blur-md' : 'bg-white/90 backdrop-blur-md';
 
@@ -93,6 +148,7 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                         monthDay: `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`,
                         year: currentDate.getFullYear(),
                     };
+
                     const dayEvents = getEventsForDay(relativeDay);
 
                     return (
@@ -106,89 +162,8 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                             </div>
 
                             {/* Events */}
-                            {dayEvents.map(event => {
-                                let IconComponent = null;
-                                let eventType: EventType;
-                                let title = '';
-                                let description = '';
-                                let address = '';
+                            {dayEvents.map(event => renderEvent(event, relativeDay))}
 
-                                if ('hotel_entry_id' in event) {
-                                    eventType = 'Hotel';
-                                    IconComponent = getIconComponent(eventType);
-                                    title = event.ideal_hotel_name || 'Unknown Hotel';
-                                    description = `Check-in: Day ${event.relative_check_in_day}, Check-out: Day ${event.relative_check_out_day}`;
-                                    address = event.address || '';
-
-                                    // Add onClick handler to open the hotel modal
-                                    return (
-                                        <div
-                                            key={`${event.creator_id}-${event.trip_id}-${title}`}
-                                            className={`${theme === 'dark' ? eventTypeColors[eventType].dark : eventTypeColors[eventType].light
-                                                } shadow-sm rounded-md px-3 py-2 mb-2`}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => {
-                                                setHotelEntryID(event.hotel_entry_id || null);
-                                                setIsHotelModalOpen(true);
-                                            }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    setHotelEntryID(event.hotel_entry_id || null);
-                                                    setIsHotelModalOpen(true);
-                                                }
-                                            }}
-                                        >
-                                            <div className="flex items-center">
-                                                {IconComponent && <IconComponent className="w-4 h-4 mr-2" />}
-                                                <h3 className="font-semibold">{title}</h3>
-                                            </div>
-                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{description}</p>
-                                            {address && (
-                                                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{address}</p>
-                                            )}
-                                            {'price_usd' in event && (
-                                                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Price: ${(event.price_usd as number).toFixed(2)} USD
-                                                </p>
-                                            )}
-                                        </div>
-                                    );
-                                } else if ('flight_entry_id' in event) {
-                                    eventType = 'Flight';
-                                    IconComponent = getIconComponent(eventType);
-                                    title = `${event.departure_city_code} to ${event.destination_city_code}`;
-                                    description = `Departure: Day ${event.relative_departure_day}, Class: ${event.travel_class}`;
-                                } else if ('activity_entry_id' in event) {
-                                    eventType = 'Activity';
-                                    IconComponent = getIconComponent(eventType);
-                                    title = event.name;
-                                    description = event.description || '';
-                                    address = event.address || '';
-                                } else {
-                                    return null; // Skip rendering if the event type is unknown
-                                }
-
-                                return (
-                                    <div
-                                        key={`${event.creator_id}-${event.trip_id}-${title}`}
-                                        className={`${theme === 'dark' ? eventTypeColors[eventType].dark : eventTypeColors[eventType].light
-                                            } shadow-sm rounded-md px-3 py-2 mb-2`}
-                                    >
-                                        <div className="flex items-center">
-                                            {IconComponent && <IconComponent className="w-4 h-4 mr-2" />}
-                                            <h3 className="font-semibold">{title}</h3>
-                                        </div>
-                                        <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{description}</p>
-                                        {address && <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{address}</p>}
-                                        {'price_usd' in event && (
-                                            <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                Price: ${event.price_usd.toFixed(2)} USD
-                                            </p>
-                                        )}
-                                    </div>
-                                );
-                            })}
                             {/* No Events */}
                             {dayEvents.length === 0 && <p className={`text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>No events</p>}
 
@@ -240,7 +215,7 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                 })}
             </ScrollShadow>
 
-            {/* Flight Modal */}
+            {/* Modals */}
             <FlightModal
                 isOpen={isFlightModalOpen}
                 newEventDate={newEventDate}
@@ -248,8 +223,6 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                 trip_id={trip_id}
                 onClose={() => setIsFlightModalOpen(false)}
             />
-
-            {/* Hotel Modal */}
             {hotelEntryID && (
                 <HotelModal
                     hotel_entry_id={hotelEntryID}
@@ -259,8 +232,6 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                     onClose={() => setIsHotelModalOpen(false)}
                 />
             )}
-
-            {/* Activity Modal */}
             <ActivityModal
                 isOpen={isActivityModalOpen}
                 newEventDate={newEventDate}
@@ -268,6 +239,44 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
                 trip_id={trip_id}
                 onClose={() => setIsActivityModalOpen(false)}
             />
+        </div>
+    );
+};
+
+// EventCard component
+interface EventCardProps {
+    eventType: EventType;
+    title: string;
+    description: string;
+    address?: string;
+    price?: number;
+    IconComponent: React.ComponentType<{ className: string }> | null;
+    onClick: () => void;
+}
+
+const EventCard: React.FC<EventCardProps> = ({ eventType, title, description, address, price, IconComponent, onClick }) => {
+    const { theme } = useTheme();
+    const bgColor = theme === 'dark' ? eventTypeColors[eventType].dark : eventTypeColors[eventType].light;
+
+    return (
+        <div
+            className={`${bgColor} shadow-sm rounded-md px-3 py-2 mb-2 cursor-pointer`}
+            role="button"
+            tabIndex={0}
+            onClick={onClick}
+            onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') onClick();
+            }}
+        >
+            <div className="flex items-center">
+                {IconComponent && <IconComponent className="w-4 h-4 mr-2" />}
+                <h3 className="font-semibold">{title}</h3>
+            </div>
+            <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{description}</p>
+            {address && <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{address}</p>}
+            {price !== undefined && (
+                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Price: ${price.toFixed(2)} USD</p>
+            )}
         </div>
     );
 };
