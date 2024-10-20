@@ -7,50 +7,6 @@ import { useState, useEffect } from 'react';
 
 import { TripDescription } from './useTrips';
 
-export enum SearchRadiusUnit {
-    KM = 'KM',
-    MI = 'MI',
-}
-
-export enum Priority {
-    PRICE = 'PRICE',
-    DISTANCE = 'DISTANCE',
-    RATING = 'RATING',
-    CLOSESTNAME = 'CLOSESTNAME',
-}
-
-export enum AmenityType {
-    SWIMMING_POOL = 'SWIMMING_POOL',
-    SPA = 'SPA',
-    FITNESS_CENTER = 'FITNESS_CENTER',
-    AIR_CONDITIONING = 'AIR_CONDITIONING',
-    RESTAURANT = 'RESTAURANT',
-    PARKING = 'PARKING',
-    PETS_ALLOWED = 'PETS_ALLOWED',
-    AIRPORT_SHUTTLE = 'AIRPORT_SHUTTLE',
-    BUSINESS_CENTER = 'BUSINESS_CENTER',
-    DISABLED_FACILITIES = 'DISABLED_FACILITIES',
-    WIFI = 'WIFI',
-    MEETING_ROOMS = 'MEETING_ROOMS',
-    NO_KID_ALLOWED = 'NO_KID_ALLOWED',
-    TENNIS = 'TENNIS',
-    GOLF = 'GOLF',
-    KITCHEN = 'KITCHEN',
-    BABY_SITTING = 'BABY-SITTING',
-    BEACH = 'BEACH',
-    CASINO = 'CASINO',
-    JACUZZI = 'JACUZZI',
-    SAUNA = 'SAUNA',
-    MASSAGE = 'MASSAGE',
-    VALET_PARKING = 'VALET_PARKING',
-    BAR = 'BAR',
-    LOUNGE = 'LOUNGE',
-    MINIBAR = 'MINIBAR',
-    TELEVISION = 'TELEVISION',
-    WI_FI_IN_ROOM = 'WI-FI_IN_ROOM',
-    ROOM_SERVICE = 'ROOM_SERVICE',
-}
-
 export interface Hotel {
     // Ids
     hotel_entry_id?: number;
@@ -72,11 +28,41 @@ export interface Hotel {
     search_latitude?: number;
     search_longitude?: number;
     search_radius?: number;
-    search_radius_unit?: SearchRadiusUnit;
+    search_radius_unit?: 'KM' | 'MI';
     allowed_chain_codes?: string[];
     allowed_ratings?: Array<1 | 2 | 3 | 4 | 5>;
-    required_amenities?: AmenityType[];
-    priority?: Priority;
+    required_amenities?: Array<
+        | 'SWIMMING_POOL'
+        | 'SPA'
+        | 'FITNESS_CENTER'
+        | 'AIR_CONDITIONING'
+        | 'RESTAURANT'
+        | 'PARKING'
+        | 'PETS_ALLOWED'
+        | 'AIRPORT_SHUTTLE'
+        | 'BUSINESS_CENTER'
+        | 'DISABLED_FACILITIES'
+        | 'WIFI'
+        | 'MEETING_ROOMS'
+        | 'NO_KID_ALLOWED'
+        | 'TENNIS'
+        | 'GOLF'
+        | 'KITCHEN'
+        | 'BABY-SITTING'
+        | 'BEACH'
+        | 'CASINO'
+        | 'JACUZZI'
+        | 'SAUNA'
+        | 'MASSAGE'
+        | 'VALET_PARKING'
+        | 'BAR'
+        | 'LOUNGE'
+        | 'MINIBAR'
+        | 'TELEVISION'
+        | 'WI-FI_IN_ROOM'
+        | 'ROOM_SERVICE'
+    >;
+    priority?: 'PRICE' | 'DISTANCE' | 'RATING' | 'CLOSESTNAME';
     ideal_hotel_name?: string;
 }
 
