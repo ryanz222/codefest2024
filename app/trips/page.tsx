@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { Card, CardFooter, Image, Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input } from '@nextui-org/react';
 import Link from 'next/link';
 
-import { Trip, useTrips } from '@/hooks/useTrips';
+import { TripDescription, useTrips } from '@/hooks/useTrips';
 
 export default function Trips() {
-    const [newTrip, setNewTrip] = useState<Omit<Trip, 'trip_id' | 'created_at' | 'creator_id'>>({
+    const [newTrip, setNewTrip] = useState<Omit<TripDescription, 'trip_id' | 'created_at' | 'creator_id'>>({
         trip_name: '',
         length_in_days: 1,
         is_published: false,

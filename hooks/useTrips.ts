@@ -5,109 +5,15 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { useSession } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
 
-interface Hotel {
-    // Id to connect hotel to trip and creator
+export interface TripDescription {
     trip_id: string;
-    creator_id: string;
-
-    // Information needed to get prices from amadeus hotel offer API
-    relative_check_in_day: number;
-    relative_check_out_day: number;
-    adults: number;
-
-    // Optional specific hotel data
-    hotel_id?: string; // If empty, will pull from Amadeus hotel search.  Otherwise, user entered address -> lat+lon -> amadeus hotel search -> hotel_id with nearest distance
-    address?: string; // Pulled from either the user inputting the address manually, or amadeus hotel search -> lat+lon -> address from Google Place API
-    photo_url?: string; // Pulled from Google Place API once we know the address
-
-    // If no hotel_id is provided, these are used to get the best hotel from amadeus hotel list API
-    search_latitude: number;
-    search_longitude: number;
-    search_radius: number;
-    search_radius_unit: 'KM' | 'MI';
-    allowed_chain_codes: string[];
-    allowed_ratings: Array<1 | 2 | 3 | 4 | 5>;
-    required_amenities: Array<
-        | 'SWIMMING_POOL'
-        | 'SPA'
-        | 'FITNESS_CENTER'
-        | 'AIR_CONDITIONING'
-        | 'RESTAURANT'
-        | 'PARKING'
-        | 'PETS_ALLOWED'
-        | 'AIRPORT_SHUTTLE'
-        | 'BUSINESS_CENTER'
-        | 'DISABLED_FACILITIES'
-        | 'WIFI'
-        | 'MEETING_ROOMS'
-        | 'NO_KID_ALLOWED'
-        | 'TENNIS'
-        | 'GOLF'
-        | 'KITCHEN'
-        | 'BABY-SITTING'
-        | 'BEACH'
-        | 'CASINO'
-        | 'JACUZZI'
-        | 'SAUNA'
-        | 'MASSAGE'
-        | 'VALET_PARKING'
-        | 'BAR'
-        | 'LOUNGE'
-        | 'MINIBAR'
-        | 'TELEVISION'
-        | 'WI-FI_IN_ROOM'
-        | 'ROOM_SERVICE'
-    >;
-    priority: 'PRICE' | 'DISTANCE' | 'RATING' | 'CLOSESTNAME';
-    ideal_hotel_name?: string;
-}
-
-interface Activity {
-    // Id to connect activity to trip and creator
-    trip_id: string;
-    creator_id: string;
-
-    // Information needed to get prices from amadeus activity offer API
-    id: string;
-    name: string;
-    photo_url: string;
-    address: string;
-    description: string;
-}
-
-interface Flight {
-    // Id to connect flight to trip and creator
-    trip_id: string;
-    creator_id: string;
-
-    // Information needed to get prices from amadeus flight offer API
-    id: string;
-    destination_city_code: string;
-    departure_city_code: string;
-    departure_date: string;
-    adults: number;
-    travel_class: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
-    non_stop: boolean;
-    currency: string;
-    max_price: number;
-    included_airline_codes: string[];
-    excluded_airline_codes: string[];
-}
-
-export interface Trip {
-    trip_id: number;
     creator_id: string;
     trip_name: string;
     length_in_days: number;
     created_at: Date;
     is_published: boolean;
-
-    // Optional
     photo_url?: string;
     description?: string;
-    hotels?: Hotel[];
-    activities?: Activity[];
-    flights?: Flight[];
 }
 
 interface TripFilters {
@@ -152,13 +58,8 @@ const createOrGetSupabaseClient = (supabaseAccessToken: string | null) => {
 // ----------------------------------------
 
 // Function to fetch trips from Supabase
-const fetchTrips = async (client: SupabaseClient, filters?: TripFilters): Promise<Trip[]> => {
-    let query = client.from('trips').select(`
-            *,
-            hotels (*),
-            activities (*),
-            flights (*)
-        `);
+const fetchTrips = async (client: SupabaseClient, filters?: TripFilters): Promise<TripDescription[]> => {
+    let query = client.from('trips').select('*');
 
     // Apply filters if provided
     if (filters?.creator) {
@@ -173,13 +74,11 @@ const fetchTrips = async (client: SupabaseClient, filters?: TripFilters): Promis
 };
 
 // Function to add a trip to Supabase
-const addTrip = async (client: SupabaseClient, trip: Omit<Trip, 'trip_id' | 'created_at' | 'creator_id'>): Promise<Trip> => {
+const addTrip = async (client: SupabaseClient, trip: Omit<TripDescription, 'trip_id' | 'created_at' | 'creator_id'>): Promise<TripDescription> => {
     const completeTrip = {
         ...trip,
         is_published: true, // Default to published
     };
-
-    console.log('adding trip', completeTrip);
 
     const { data, error } = await client.from('trips').insert(completeTrip).select().single();
 
@@ -233,7 +132,7 @@ export function useTrips(filters?: TripFilters) {
         };
     }, [isClerkLoaded, session]);
 
-    const tripsQuery = useQuery<Trip[], Error>({
+    const tripsQuery = useQuery<TripDescription[], Error>({
         queryKey: ['trips', filters],
         queryFn: () => {
             if (!client) throw new Error('Supabase client not initialized');
@@ -244,7 +143,7 @@ export function useTrips(filters?: TripFilters) {
     });
 
     const addTripMutation = useMutation({
-        mutationFn: (trip: Omit<Trip, 'trip_id' | 'created_at' | 'creator_id'>) => {
+        mutationFn: (trip: Omit<TripDescription, 'trip_id' | 'created_at' | 'creator_id'>) => {
             if (!client || !session) throw new Error('Supabase client or session not initialized');
 
             return addTrip(client, trip);
