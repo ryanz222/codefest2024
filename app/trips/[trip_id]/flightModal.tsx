@@ -1,6 +1,8 @@
 // app/trips/[trip_id]/flightModal.tsx
 'use client';
-import React, { useState, useEffect } from 'react';
+/// <reference types="@types/google.maps" />
+
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Modal,
     ModalContent,
@@ -12,78 +14,105 @@ import {
     Switch,
     Select,
     SelectItem,
+    Spinner,
     Autocomplete,
     AutocompleteItem,
 } from '@nextui-org/react';
+import { toast } from 'react-hot-toast';
 
 import { Flight, useTrip } from '@/hooks/useTrip';
 
 interface FlightModalProps {
     isOpen: boolean;
     onClose: () => void;
-    newEventDate: Date | null;
     trip_id: string;
     tripStartDate: Date;
+    flight_entry_id: number;
 }
 
-const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, newEventDate: date, trip_id, tripStartDate }) => {
-    const { trip, updateTrip } = useTrip(trip_id);
-    const [flightData, setFlightData] = useState<Flight>({
-        trip_id: trip_id,
-        creator_id: trip?.creator_id || '',
-        destination_city_code: '',
-        departure_city_code: '',
-        relative_departure_day: 0,
-        relative_return_day: 0,
-        travel_class: 'ECONOMY',
-        non_stop: false,
-        currency: 'USD',
-        max_price: 1000,
-        included_airline_codes: [],
-        excluded_airline_codes: [],
-    });
+const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, trip_id, tripStartDate, flight_entry_id }) => {
+    const { trip, updateFlight } = useTrip(trip_id);
+    const [flightData, setFlightData] = useState<Flight | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const [departureCity, setDepartureCity] = useState('');
-    const [destinationCity, setDestinationCity] = useState('');
-    const [departureSuggestions, setDepartureSuggestions] = useState<string[]>([]);
-    const [destinationSuggestions, setDestinationSuggestions] = useState<string[]>([]);
+    const [departureCityInput, setDepartureCityInput] = useState('');
+    const [destinationCityInput, setDestinationCityInput] = useState('');
     const [departurePredictions, setDeparturePredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
     const [destinationPredictions, setDestinationPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
 
+    // Find the current flight in the trip data
     useEffect(() => {
-        if (departureCity) {
-            fetchSuggestions(departureCity, setDepartureSuggestions);
-        }
-    }, [departureCity]);
+        if (trip) {
+            const currentFlight = trip.flights.find(flight => flight.flight_entry_id === flight_entry_id);
 
-    useEffect(() => {
-        if (destinationCity) {
-            fetchSuggestions(destinationCity, setDestinationSuggestions);
+            if (currentFlight) {
+                setFlightData(currentFlight);
+            }
         }
-    }, [destinationCity]);
+    }, [trip, flight_entry_id]);
 
-    const fetchSuggestions = async (input: string, setSuggestions: React.Dispatch<React.SetStateAction<string[]>>) => {
+    const handleCityChange = async (value: string, type: 'departure' | 'destination') => {
+        if (!flightData) return;
+
+        setIsLoading(true);
+        setError(null);
+
         try {
-            const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(input)}`);
+            const response = await fetch(`/api/cityNameTocityCode?cityName=${encodeURIComponent(value)}`);
             const data = await response.json();
-            const suggestions = data.predictions.map((prediction: any) => prediction.description);
 
-            setSuggestions(suggestions);
+            if (data.airportCode) {
+                const updatedFlight = {
+                    ...flightData,
+                    [type === 'departure' ? 'departure_city_code' : 'destination_city_code']: data.airportCode,
+                };
+
+                await updateFlight(updatedFlight);
+                setFlightData(updatedFlight);
+                toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} city updated successfully`);
+            } else {
+                throw new Error('City code not found');
+            }
         } catch (error) {
-            console.error('Error fetching suggestions:', error);
+            console.error('Error updating city:', error);
+            setError(`Failed to update ${type} city. Please try again.`);
+            toast.error(`Failed to update ${type} city`);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const fetchCityCode = async (cityName: string, setCode: React.Dispatch<React.SetStateAction<string>>) => {
-        try {
-            const response = await fetch(`/api/places/citycode?cityName=${encodeURIComponent(cityName)}`);
-            const data = await response.json();
+    const handleUpdateFlight = async () => {
+        if (!flightData) return;
 
-            setCode(data.cityCode);
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            await updateFlight(flightData);
+            toast.success('Flight updated successfully');
+            onClose();
         } catch (error) {
-            console.error('Error fetching city code:', error);
+            console.error('Error updating flight:', error);
+            setError('An error occurred while updating the flight. Please try again.');
+            toast.error('Failed to update flight');
+        } finally {
+            setIsLoading(false);
         }
     };
+
+    const exactDepartureDate = useMemo(() => {
+        if (flightData && tripStartDate) {
+            const date = new Date(tripStartDate);
+
+            date.setDate(date.getDate() + flightData.relative_departure_day);
+
+            return date;
+        }
+
+        return null;
+    }, [flightData, tripStartDate]);
 
     const handleInputChange = async (value: string, type: 'departure' | 'destination') => {
         if (value.length > 2) {
@@ -130,9 +159,9 @@ const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, newEventDate
             const cityName = selectedPrediction.description;
 
             if (type === 'departure') {
-                setDepartureCity(cityName);
+                setDepartureCityInput(cityName);
             } else {
-                setDestinationCity(cityName);
+                setDestinationCityInput(cityName);
             }
 
             try {
@@ -140,7 +169,10 @@ const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, newEventDate
                 const data = await response.json();
 
                 if (data.airportCode) {
-                    handleInputChange(type === 'departure' ? 'departure_city_code' : 'destination_city_code', data.airportCode);
+                    setFlightData(prev => ({
+                        ...(prev as Flight),
+                        [type === 'departure' ? 'departure_city_code' : 'destination_city_code']: data.airportCode,
+                    }));
                 } else {
                     console.error('City code not found');
                 }
@@ -150,66 +182,65 @@ const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, newEventDate
         }
     };
 
-    const handleAddFlight = async () => {
-        if (!trip || !date) return;
-
-        const relativeDepartureDay = Math.floor((date.getTime() - tripStartDate.getTime()) / (1000 * 60 * 60 * 24));
-
-        const newFlight: Flight = {
-            ...flightData,
-            relative_departure_day: relativeDepartureDay,
-            relative_return_day: relativeDepartureDay, // Assuming it's a one-way flight for now
-        };
-
-        const updatedTrip = {
-            ...trip,
-            flights: [...trip.flights, newFlight],
-        };
-
-        await updateTrip(updatedTrip);
-        onClose();
-    };
+    if (!flightData) return null;
 
     return (
         <Modal isOpen={isOpen} scrollBehavior="inside" size="3xl" onClose={onClose}>
             <ModalContent>
-                <ModalHeader className="flex flex-col gap-1">Add New Flight</ModalHeader>
+                <ModalHeader className="flex flex-col gap-1">Edit Flight</ModalHeader>
                 <ModalBody>
                     <div className="flex flex-col gap-4">
-                        <Input readOnly label="Date" value={date?.toDateString() || ''} />
-                        <Autocomplete
-                            label="Departure City"
-                            placeholder="Enter departure city"
-                            onInputChange={value => handleInputChange(value, 'departure')}
-                            onSelectionChange={key => {
-                                if (typeof key === 'string') {
-                                    handleCitySelect(key, 'departure');
-                                }
-                            }}
-                        >
-                            {departurePredictions.map(prediction => (
-                                <AutocompleteItem key={prediction.place_id} textValue={prediction.description}>
-                                    {prediction.description}
-                                </AutocompleteItem>
-                            ))}
-                        </Autocomplete>
-                        <Autocomplete
-                            label="Destination City"
-                            placeholder="Enter destination city"
-                            onInputChange={value => handleInputChange(value, 'destination')}
-                            onSelectionChange={key => {
-                                if (typeof key === 'string') {
-                                    handleCitySelect(key, 'destination');
-                                }
-                            }}
-                        >
-                            {destinationPredictions.map(prediction => (
-                                <AutocompleteItem key={prediction.place_id} textValue={prediction.description}>
-                                    {prediction.description}
-                                </AutocompleteItem>
-                            ))}
-                        </Autocomplete>
+                        <Input key="departureDate" readOnly label="Departure Date" value={exactDepartureDate?.toDateString() || ''} />
+                        <div className="flex gap-4">
+                            <Autocomplete
+                                label="Departure City"
+                                placeholder="Enter departure city"
+                                value={departureCityInput}
+                                onInputChange={value => handleInputChange(value, 'departure')}
+                                onSelectionChange={key => {
+                                    if (typeof key === 'string') {
+                                        handleCitySelect(key, 'departure');
+                                    }
+                                }}
+                            >
+                                {departurePredictions.map(prediction => (
+                                    <AutocompleteItem key={prediction.place_id} textValue={prediction.description}>
+                                        {prediction.description}
+                                    </AutocompleteItem>
+                                ))}
+                            </Autocomplete>
+                            <Input
+                                label="Departure City Code"
+                                value={flightData.departure_city_code}
+                                onChange={e => setFlightData({ ...flightData, departure_city_code: e.target.value })}
+                            />
+                        </div>
+                        <div className="flex gap-4">
+                            <Autocomplete
+                                label="Destination City"
+                                placeholder="Enter destination city"
+                                value={destinationCityInput}
+                                onInputChange={value => handleInputChange(value, 'destination')}
+                                onSelectionChange={key => {
+                                    if (typeof key === 'string') {
+                                        handleCitySelect(key, 'destination');
+                                    }
+                                }}
+                            >
+                                {destinationPredictions.map(prediction => (
+                                    <AutocompleteItem key={prediction.place_id} textValue={prediction.description}>
+                                        {prediction.description}
+                                    </AutocompleteItem>
+                                ))}
+                            </Autocomplete>
+                            <Input
+                                label="Destination City Code"
+                                value={flightData.destination_city_code}
+                                onChange={e => setFlightData({ ...flightData, destination_city_code: e.target.value })}
+                            />
+                        </div>
                         <Select
+                            key="travelClass"
                             label="Travel Class"
                             selectedKeys={[flightData.travel_class]}
                             onSelectionChange={keys =>
@@ -224,41 +255,50 @@ const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, newEventDate
                             <SelectItem key="BUSINESS">Business</SelectItem>
                             <SelectItem key="FIRST">First</SelectItem>
                         </Select>
-                        <Switch checked={flightData.non_stop} onValueChange={checked => setFlightData({ ...flightData, non_stop: checked })}>
+                        <Switch
+                            key="nonStop"
+                            checked={flightData.non_stop}
+                            onValueChange={checked => setFlightData({ ...flightData, non_stop: checked })}
+                        >
                             Non-stop flights only
                         </Switch>
                         <Input
+                            key="currency"
                             label="Currency"
                             type="text"
                             value={flightData.currency}
                             onChange={e => setFlightData({ ...flightData, currency: e.target.value })}
                         />
                         <Input
+                            key="maxPrice"
                             label="Max Price"
                             type="number"
                             value={flightData.max_price.toString()}
                             onChange={e => setFlightData({ ...flightData, max_price: parseFloat(e.target.value) })}
                         />
                         <Input
+                            key="includedAirlineCodes"
                             label="Included Airline Codes"
                             placeholder="Comma-separated list"
                             value={flightData.included_airline_codes.join(',')}
                             onChange={e => setFlightData({ ...flightData, included_airline_codes: e.target.value.split(',') })}
                         />
                         <Input
+                            key="excludedAirlineCodes"
                             label="Excluded Airline Codes"
                             placeholder="Comma-separated list"
                             value={flightData.excluded_airline_codes.join(',')}
                             onChange={e => setFlightData({ ...flightData, excluded_airline_codes: e.target.value.split(',') })}
                         />
                     </div>
+                    {error && <p className="text-red-500">{error}</p>}
                 </ModalBody>
                 <ModalFooter>
                     <Button color="danger" variant="light" onPress={onClose}>
                         Cancel
                     </Button>
-                    <Button color="primary" onPress={handleAddFlight}>
-                        Add Flight
+                    <Button color="primary" disabled={isLoading} onPress={handleUpdateFlight}>
+                        {isLoading ? <Spinner size="sm" /> : 'Update Flight'}
                     </Button>
                 </ModalFooter>
             </ModalContent>

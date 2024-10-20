@@ -171,111 +171,6 @@ const fetchTrip = async (client: SupabaseClient, trip_id: string): Promise<TripD
     };
 };
 
-const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Promise<TripData> => {
-    const { trip_id, hotels, flights, activities, ...tripData } = trip;
-
-    if (!trip_id) throw new Error('Trip ID is required for updating');
-
-    // Update trip data
-    const { error: tripError } = await client.from('trips').update(tripData).eq('trip_id', trip_id).select().single();
-
-    if (tripError) throw tripError;
-
-    // Handle hotels
-    if (hotels && hotels.length > 0) {
-        const { data, error: hotelError } = await client
-            .from('hotels')
-            .upsert(
-                hotels.map(({ ...h }) => ({
-                    trip_id: h.trip_id,
-                    creator_id: h.creator_id,
-                    relative_check_in_day: h.relative_check_in_day,
-                    relative_check_out_day: h.relative_check_out_day,
-                    amadeus_hotel_id: h.amadeus_hotel_id,
-                    address: h.address,
-                    photo_url: h.photo_url,
-                    hotel_latitude: h.hotel_latitude,
-                    hotel_longitude: h.hotel_longitude,
-                    search_latitude: h.search_latitude,
-                    search_longitude: h.search_longitude,
-                    search_radius: h.search_radius,
-                    search_radius_unit: h.search_radius_unit,
-                    allowed_chain_codes: h.allowed_chain_codes,
-                    allowed_ratings: h.allowed_ratings,
-                    required_amenities: h.required_amenities,
-                    priority: h.priority,
-                    ideal_hotel_name: h.ideal_hotel_name,
-                })),
-                {
-                    onConflict: 'trip_id,hotel_entry_id',
-                    ignoreDuplicates: false,
-                }
-            )
-            .select();
-
-        if (hotelError) {
-            console.error('Error upserting hotels:', hotelError);
-            throw hotelError;
-        }
-
-        console.log('Upserted hotels:', data);
-    }
-
-    // Handle flights
-    if (flights && flights.length > 0) {
-        const { error: flightError } = await client.from('flights').upsert(
-            flights.map(f => ({
-                flight_entry_id: f.flight_entry_id, // Include if present for updates
-                trip_id: f.trip_id,
-                creator_id: f.creator_id,
-                destination_city_code: f.destination_city_code,
-                departure_city_code: f.departure_city_code,
-                relative_departure_day: f.relative_departure_day,
-                relative_return_day: f.relative_return_day,
-                travel_class: f.travel_class,
-                non_stop: f.non_stop,
-                currency: f.currency,
-                max_price: f.max_price,
-                included_airline_codes: f.included_airline_codes,
-                excluded_airline_codes: f.excluded_airline_codes,
-            })),
-            {
-                onConflict: 'flight_entry_id',
-                ignoreDuplicates: false, // Updates existing rows
-            }
-        );
-
-        if (flightError) throw flightError;
-    }
-
-    // Handle activities
-    if (activities && activities.length > 0) {
-        const { error: activityError } = await client.from('activities').upsert(
-            activities.map(a => ({
-                activity_entry_id: a.activity_entry_id, // Include if present for updates
-                trip_id: a.trip_id,
-                creator_id: a.creator_id,
-                name: a.name,
-                relative_day: a.relative_day,
-                price_usd: a.price_usd,
-                photo_url: a.photo_url,
-                address: a.address,
-                description: a.description,
-                latitude: a.latitude,
-                longitude: a.longitude,
-            })),
-            {
-                onConflict: 'activity_entry_id',
-                ignoreDuplicates: false, // Updates existing rows
-            }
-        );
-
-        if (activityError) throw activityError;
-    }
-
-    return fetchTrip(client, trip_id);
-};
-
 // ----------------------------------------
 // useTrip Hook
 // ----------------------------------------
@@ -431,12 +326,10 @@ export function useTrip(trip_id: string) {
         mutationFn: async (updatedFlight: Flight) => {
             if (!client || !session) throw new Error('Supabase client or session not initialized');
 
-            const { data, error } = await client
-                .from('flights')
-                .update(updatedFlight)
-                .eq('flight_entry_id', updatedFlight.flight_entry_id)
-                .select()
-                .single();
+            // Create a new object without the flight_entry_id
+            const { flight_entry_id, ...flightDataToUpdate } = updatedFlight;
+
+            const { data, error } = await client.from('flights').update(flightDataToUpdate).eq('flight_entry_id', flight_entry_id).select().single();
 
             if (error) throw error;
 

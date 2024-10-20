@@ -244,13 +244,15 @@ const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
             </ScrollShadow>
 
             {/* Modals */}
-            <FlightModal
-                isOpen={isFlightModalOpen}
-                newEventDate={newEventDate}
-                tripStartDate={tripStartDate}
-                trip_id={trip_id}
-                onClose={() => setIsFlightModalOpen(false)}
-            />
+            {flightEntryID && (
+                <FlightModal
+                    flight_entry_id={flightEntryID}
+                    isOpen={isFlightModalOpen}
+                    tripStartDate={tripStartDate}
+                    trip_id={trip_id}
+                    onClose={() => setIsFlightModalOpen(false)}
+                />
+            )}
             {hotelEntryID && (
                 <HotelModal
                     hotel_entry_id={hotelEntryID}
