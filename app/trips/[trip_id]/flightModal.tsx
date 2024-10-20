@@ -31,7 +31,6 @@ const FlightModal: React.FC<FlightModalProps> = ({ isOpen, onClose, newEventDate
     const [flightData, setFlightData] = useState<Flight>({
         trip_id: trip_id,
         creator_id: trip?.creator_id || '',
-        id: '',
         destination_city_code: '',
         departure_city_code: '',
         relative_departure_day: 0,
