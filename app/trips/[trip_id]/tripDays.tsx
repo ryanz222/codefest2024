@@ -1,9 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ScrollShadow } from '@nextui-org/react';
 import { useTheme } from 'next-themes';
 
-import { HotelIcon, PlaneIcon, ActivityIcon, DarkModeHotelIcon, DarkModePlaneIcon, DarkModeActivityIcon } from '@/components/icons';
+import ActivityModal from './activityModal';
+import FlightModal from './flightModal';
+import HotelModal from './hotelModal';
+
 import { TripData } from '@/hooks/useTrip';
+import { HotelIcon, PlaneIcon, ActivityIcon, DarkModeHotelIcon, DarkModePlaneIcon, DarkModeActivityIcon } from '@/components/icons';
 
 type EventType = 'Hotel' | 'Flight' | 'Activity';
 
@@ -52,13 +56,17 @@ const holidays: Holiday[] = [
 const getHolidayInfo = (date: Date) => holidays.find(h => h.date === date.toISOString().split('T')[0]);
 
 interface TripDaysProps {
-    trip: TripData;
+    trip_id: string;
     tripStartDate: Date;
     onAddEvent: (eventType: EventType, date: Date) => void;
 }
 
-const TripDays: React.FC<TripDaysProps> = ({ trip, tripStartDate, onAddEvent }) => {
+const TripDays: React.FC<TripDaysProps> = ({ tripStartDate, trip_id }) => {
     const { theme } = useTheme();
+    const [newEventDate, setNewEventDate] = useState<Date>(tripStartDate);
+    const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
+    const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
+    const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
 
     const allDays = useMemo(() => {
         const startDate = new Date(tripStartDate);
@@ -71,6 +79,18 @@ const TripDays: React.FC<TripDaysProps> = ({ trip, tripStartDate, onAddEvent }) 
             return date;
         });
     }, [tripStartDate, trip.length_in_days]);
+
+    // Function to handle adding an event to the trip
+    const handleAddEvent = (eventType: 'Flight' | 'Hotel' | 'Activity', date: Date) => {
+        setNewEventDate(date);
+        if (eventType === 'Flight') {
+            setIsFlightModalOpen(true);
+        } else if (eventType === 'Hotel') {
+            setIsHotelModalOpen(true);
+        } else if (eventType === 'Activity') {
+            setIsActivityModalOpen(true);
+        }
+    };
 
     function getEventsForDay(date: Date) {
         const relativeDay = Math.floor((date.getTime() - tripStartDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -219,6 +239,33 @@ const TripDays: React.FC<TripDaysProps> = ({ trip, tripStartDate, onAddEvent }) 
                     );
                 })}
             </ScrollShadow>
+
+            {/* Flight Modal */}
+            <FlightModal
+                isOpen={isFlightModalOpen}
+                newEventDate={newEventDate}
+                tripStartDate={tripStartDate}
+                trip_id={trip_id}
+                onClose={() => setIsFlightModalOpen(false)}
+            />
+
+            {/* Hotel Modal */}
+            <HotelModal
+                hotel_entry_id={hotel_entry_id}
+                isOpen={isHotelModalOpen}
+                tripStartDate={tripStartDate}
+                trip_id={trip_id}
+                onClose={() => setIsHotelModalOpen(false)}
+            />
+
+            {/* Activity Modal */}
+            <ActivityModal
+                isOpen={isActivityModalOpen}
+                newEventDate={newEventDate}
+                tripStartDate={tripStartDate}
+                trip_id={trip_id}
+                onClose={() => setIsActivityModalOpen(false)}
+            />
         </div>
     );
 };
