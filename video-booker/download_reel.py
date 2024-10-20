@@ -22,13 +22,13 @@ driver.execute_script("arguments[0].scrollIntoView(true);", download_button)
 #time.sleep(1) 
 download_button.click()
 
-time.sleep(2)
+time.sleep(3)
 
 video_link = driver.find_element(By.XPATH, '//a[@rel="noreferrer nofollow"]').get_attribute('href')
 
 video_response = requests.get(video_link)
 
-with open("reel.mp4", "wb") as file:
+with open("downloaded_reel.mp4", "wb") as file:
     file.write(video_response.content)
 
 print("Reel downloaded successfully!")
