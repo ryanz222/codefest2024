@@ -312,7 +312,7 @@ export default function TripTimeline({ events, setEvents }: TripTimelineProps) {
                 <Button
                     isIconOnly
                     aria-label="Return to present day"
-                    className={`absolute bottom-48 right-8 ${theme === 'dark' ? 'bg-gray-700 text-blue-300 hover:bg-gray-600' : 'bg-white text-blue-500 hover:bg-gray-100'
+                    className={`absolute bottom-4 right-8 ${theme === 'dark' ? 'bg-gray-700 text-blue-300 hover:bg-gray-600' : 'bg-white text-blue-500 hover:bg-gray-100'
                         } shadow-lg transition-colors duration-200`}
                     radius="full"
                     size="lg"

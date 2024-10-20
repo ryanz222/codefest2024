@@ -4,6 +4,7 @@ import Amadeus, { CurrencyCode, HotelOffersSearchParams } from 'amadeus-ts';
 export const runtime = 'nodejs'; // Set the runtime to Node.js
 
 const amadeus = new Amadeus({
+    //host: 'api.amadeus.com',
     clientId: process.env.AMADEUS_CLIENT_ID,
     clientSecret: process.env.AMADEUS_CLIENT_SECRET,
 });

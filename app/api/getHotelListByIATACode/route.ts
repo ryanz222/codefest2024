@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import Amadeus from 'amadeus-ts';
 
 const amadeus = new Amadeus({
+    //host: 'api.amadeus.com',
     clientId: process.env.AMADEUS_CLIENT_ID,
     clientSecret: process.env.AMADEUS_CLIENT_SECRET,
 });
