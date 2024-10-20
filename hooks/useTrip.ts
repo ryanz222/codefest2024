@@ -328,9 +328,28 @@ export function useTrip(trip_id: string) {
     // Update trip data
     const updateTripMutation = useMutation({
         mutationFn: async (updatedTrip: Partial<TripData>) => {
+            // Make sure we have what we need
             if (!client || !session) throw new Error('Supabase client or session not initialized');
+            if (!updatedTrip.trip_id) throw new Error('Trip ID is required for updating');
+            if (!updatedTrip.trip_name) throw new Error('Trip name is required for updating');
+            if (!updatedTrip.length_in_days) throw new Error('Length in days is required for updating');
+            if (typeof updatedTrip.adults !== 'number') throw new Error('Adults is required for updating');
+            if (!updatedTrip.created_at) throw new Error('Created at is required for updating');
+            if (typeof updatedTrip.is_published !== 'boolean') throw new Error('Is published is required for updating');
 
-            const { data, error } = await client.from('trips').update(updatedTrip).eq('trip_id', trip_id).select().single();
+            // Create the trip details object
+            const tripDetailsOnly: Omit<TripDescription, 'creator_id'> = {
+                trip_id: updatedTrip.trip_id,
+                trip_name: updatedTrip.trip_name,
+                length_in_days: updatedTrip.length_in_days,
+                adults: updatedTrip.adults,
+                created_at: updatedTrip.created_at,
+                is_published: updatedTrip.is_published,
+                photo_url: updatedTrip.photo_url,
+                description: updatedTrip.description,
+            };
+
+            const { data, error } = await client.from('trips').update(tripDetailsOnly).eq('trip_id', trip_id).select().single();
 
             if (error) throw error;
 
