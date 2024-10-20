@@ -184,35 +184,42 @@ const updateTrip = async (client: SupabaseClient, trip: Partial<TripData>): Prom
 
     // Handle hotels
     if (hotels && hotels.length > 0) {
-        const { error: hotelError } = await client.from('hotels').upsert(
-            hotels.map(h => ({
-                hotel_entry_id: h.hotel_entry_id, // Include if present for updates
-                trip_id: h.trip_id,
-                creator_id: h.creator_id,
-                relative_check_in_day: h.relative_check_in_day,
-                relative_check_out_day: h.relative_check_out_day,
-                amadeus_hotel_id: h.amadeus_hotel_id,
-                address: h.address,
-                photo_url: h.photo_url,
-                hotel_latitude: h.hotel_latitude,
-                hotel_longitude: h.hotel_longitude,
-                search_latitude: h.search_latitude,
-                search_longitude: h.search_longitude,
-                search_radius: h.search_radius,
-                search_radius_unit: h.search_radius_unit,
-                allowed_chain_codes: h.allowed_chain_codes,
-                allowed_ratings: h.allowed_ratings,
-                required_amenities: h.required_amenities,
-                priority: h.priority,
-                ideal_hotel_name: h.ideal_hotel_name,
-            })),
-            {
-                onConflict: 'trip_id,hotel_entry_id',
-                ignoreDuplicates: false, // This will update existing rows
-            }
-        );
+        const { data, error: hotelError } = await client
+            .from('hotels')
+            .upsert(
+                hotels.map(({ ...h }) => ({
+                    trip_id: h.trip_id,
+                    creator_id: h.creator_id,
+                    relative_check_in_day: h.relative_check_in_day,
+                    relative_check_out_day: h.relative_check_out_day,
+                    amadeus_hotel_id: h.amadeus_hotel_id,
+                    address: h.address,
+                    photo_url: h.photo_url,
+                    hotel_latitude: h.hotel_latitude,
+                    hotel_longitude: h.hotel_longitude,
+                    search_latitude: h.search_latitude,
+                    search_longitude: h.search_longitude,
+                    search_radius: h.search_radius,
+                    search_radius_unit: h.search_radius_unit,
+                    allowed_chain_codes: h.allowed_chain_codes,
+                    allowed_ratings: h.allowed_ratings,
+                    required_amenities: h.required_amenities,
+                    priority: h.priority,
+                    ideal_hotel_name: h.ideal_hotel_name,
+                })),
+                {
+                    onConflict: 'trip_id,hotel_entry_id',
+                    ignoreDuplicates: false
+                }
+            )
+            .select();
 
-        if (hotelError) throw hotelError;
+        if (hotelError) {
+            console.error('Error upserting hotels:', hotelError);
+            throw hotelError;
+        }
+
+        console.log('Upserted hotels:', data);
     }
 
     // Handle flights
