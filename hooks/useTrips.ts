@@ -6,19 +6,59 @@ import { useSession } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
 
 interface Hotel {
-    id: string; // 8 character string
-    trip_id: string; // 8 character string
-    city_code: string;
-    name: string;
-    photo_url: string;
-    address: string;
-    latitude: number;
-    longitude: number;
-    check_in_day: number;
-    check_out_day: number;
+    // Id to connect hotel to trip
+    tripId: string;
+
+    // Information needed to get prices from amadeus hotel offer API
+    relativeCheckInDay: number;
+    relativeCheckOutDay: number;
     adults: number;
-    room_quantity: number;
-    board_type: 'ROOM_ONLY' | 'BREAKFAST' | 'HALF_BOARD' | 'FULL_BOARD' | 'ALL_INCLUSIVE';
+
+    // Optional specific hotel data
+    hotelId: string; // Pulled from Amadeus hotel list data
+    lastUpdate: string; // Pulled from Amadeus hotel list data
+    address: string; // Pulled from Google Place API
+    photoURL: string; // Pulled from Google Place API
+
+    // If no hotelId is provided, these are used to get the best hotel from amadeus hotel list API
+    searchLatitude: number;
+    searchLongitude: number;
+    searchRadius: number;
+    searchRadiusUnit: 'KM' | 'MI';
+    allowedChainCodes: string[];
+    allowedRatings: Array<1 | 2 | 3 | 4 | 5>;
+    requiredAmenities: Array<
+        | 'SWIMMING_POOL'
+        | 'SPA'
+        | 'FITNESS_CENTER'
+        | 'AIR_CONDITIONING'
+        | 'RESTAURANT'
+        | 'PARKING'
+        | 'PETS_ALLOWED'
+        | 'AIRPORT_SHUTTLE'
+        | 'BUSINESS_CENTER'
+        | 'DISABLED_FACILITIES'
+        | 'WIFI'
+        | 'MEETING_ROOMS'
+        | 'NO_KID_ALLOWED'
+        | 'TENNIS'
+        | 'GOLF'
+        | 'KITCHEN'
+        | 'BABY-SITTING'
+        | 'BEACH'
+        | 'CASINO'
+        | 'JACUZZI'
+        | 'SAUNA'
+        | 'MASSAGE'
+        | 'VALET_PARKING'
+        | 'BAR'
+        | 'LOUNGE'
+        | 'MINIBAR'
+        | 'TELEVISION'
+        | 'WI-FI_IN_ROOM'
+        | 'ROOM_SERVICE'
+    >;
+    priority: 'PRICE' | 'DISTANCE' | 'RATING';
 }
 
 interface Activity {
@@ -33,15 +73,18 @@ interface Flight {
 }
 
 interface Trip {
-    id: number;
-    name: string;
-    length_in_days: number;
-    description: string;
-    user_id: string;
-    created_at: string;
-    hotels: Hotel[];
-    activities: Activity[];
-    flights: Flight[];
+    tripId: number;
+    creatorId: string;
+    tripName: string;
+    lengthInDays: number;
+    createdAt: Date;
+
+    // Optional
+    photoURL?: string;
+    description?: string;
+    hotels?: Hotel[];
+    activities?: Activity[];
+    flights?: Flight[];
 }
 
 interface TripFilters {
