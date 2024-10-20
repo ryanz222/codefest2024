@@ -7,27 +7,27 @@ import { useState, useEffect } from 'react';
 
 interface Hotel {
     // Id to connect hotel to trip and creator
-    tripId: string;
-    creatorId: string;
+    trip_id: string;
+    creator_id: string;
 
     // Information needed to get prices from amadeus hotel offer API
-    relativeCheckInDay: number;
-    relativeCheckOutDay: number;
+    relative_check_in_day: number;
+    relative_check_out_day: number;
     adults: number;
 
     // Optional specific hotel data
-    hotelId?: string; // If empty, will pull from Amadeus hotel search.  Otherwise, user entered address -> lat+lon -> amadeus hotel search -> hotelId with nearest distance
+    hotel_id?: string; // If empty, will pull from Amadeus hotel search.  Otherwise, user entered address -> lat+lon -> amadeus hotel search -> hotel_id with nearest distance
     address?: string; // Pulled from either the user inputting the address manually, or amadeus hotel search -> lat+lon -> address from Google Place API
-    photoURL?: string; // Pulled from Google Place API once we know the address
+    photo_url?: string; // Pulled from Google Place API once we know the address
 
-    // If no hotelId is provided, these are used to get the best hotel from amadeus hotel list API
-    searchLatitude: number;
-    searchLongitude: number;
-    searchRadius: number;
-    searchRadiusUnit: 'KM' | 'MI';
-    allowedChainCodes: string[];
-    allowedRatings: Array<1 | 2 | 3 | 4 | 5>;
-    requiredAmenities: Array<
+    // If no hotel_id is provided, these are used to get the best hotel from amadeus hotel list API
+    search_latitude: number;
+    search_longitude: number;
+    search_radius: number;
+    search_radius_unit: 'KM' | 'MI';
+    allowed_chain_codes: string[];
+    allowed_ratings: Array<1 | 2 | 3 | 4 | 5>;
+    required_amenities: Array<
         | 'SWIMMING_POOL'
         | 'SPA'
         | 'FITNESS_CENTER'
@@ -59,50 +59,51 @@ interface Hotel {
         | 'ROOM_SERVICE'
     >;
     priority: 'PRICE' | 'DISTANCE' | 'RATING' | 'CLOSESTNAME';
-    idealHotelName?: string;
+    ideal_hotel_name?: string;
 }
 
 interface Activity {
     // Id to connect activity to trip and creator
-    tripId: string;
-    creatorId: string;
+    trip_id: string;
+    creator_id: string;
 
     // Information needed to get prices from amadeus activity offer API
     id: string;
     name: string;
-    photoURL: string;
+    photo_url: string;
     address: string;
     description: string;
 }
 
 interface Flight {
     // Id to connect flight to trip and creator
-    tripId: string;
-    creatorId: string;
+    trip_id: string;
+    creator_id: string;
 
     // Information needed to get prices from amadeus flight offer API
     id: string;
-    destinationCityCode: string;
-    departureCityCode: string;
-    departureDate: string;
+    destination_city_code: string;
+    departure_city_code: string;
+    departure_date: string;
     adults: number;
-    travelClass: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
-    nonStop: boolean;
+    travel_class: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
+    non_stop: boolean;
     currency: string;
-    maxPrice: number;
-    includedAirlineCodes: string[];
-    excludedAirlineCodes: string[];
+    max_price: number;
+    included_airline_codes: string[];
+    excluded_airline_codes: string[];
 }
 
 interface Trip {
-    tripId: number;
-    creatorId: string;
-    tripName: string;
-    lengthInDays: number;
-    createdAt: Date;
+    trip_id: number;
+    creator_id: string;
+    trip_name: string;
+    length_in_days: number;
+    created_at: Date;
+    is_published: boolean;
 
     // Optional
-    photoURL?: string;
+    photo_url?: string;
     description?: string;
     hotels?: Hotel[];
     activities?: Activity[];
